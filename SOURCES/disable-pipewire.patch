@@ -1,0 +1,242 @@
+diff --git a/dom/media/webrtc/third_party_build/webrtc.mozbuild b/dom/media/webrtc/third_party_build/webrtc.mozbuild
+index 30169c36c2..335e3cb1a1 100644
+--- a/dom/media/webrtc/third_party_build/webrtc.mozbuild
++++ b/dom/media/webrtc/third_party_build/webrtc.mozbuild
+@@ -35,6 +35,3 @@ if CONFIG['MOZ_WEBRTC']:
+ 
+     if CONFIG['MOZ_X11']:
+         DEFINES['WEBRTC_USE_X11'] = True
+-
+-    if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
+-        DEFINES['WEBRTC_USE_PIPEWIRE'] = True
+diff --git a/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build b/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build
+index 8c56b6b8e5..eaf8d7087a 100644
+--- a/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build
++++ b/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build
+@@ -232,102 +232,6 @@ if CONFIG["CPU_ARCH"] == "aarch64":
+     DEFINES["WEBRTC_ARCH_ARM64"] = True
+     DEFINES["WEBRTC_HAS_NEON"] = True
+ 
+-if CONFIG["CPU_ARCH"] == "arm":
+-
+-    CXXFLAGS += [
+-        "-mfpu=neon"
+-    ]
+-
+-    DEFINES["WEBRTC_ARCH_ARM"] = True
+-    DEFINES["WEBRTC_ARCH_ARM_V7"] = True
+-    DEFINES["WEBRTC_HAS_NEON"] = True
+-    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
+-    DEFINES["_GNU_SOURCE"] = True
+-
+-    LOCAL_INCLUDES += [
+-        "/gfx/angle/checkout/include/",
+-        "/third_party/drm/drm/",
+-        "/third_party/drm/drm/include/",
+-        "/third_party/drm/drm/include/libdrm/",
+-        "/third_party/gbm/gbm/",
+-        "/third_party/libepoxy/libepoxy/include/",
+-        "/third_party/pipewire/"
+-    ]
+-
+-    SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc"
+-    ]
+-
+-    UNIFIED_SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/egl_dmabuf.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/mouse_cursor_monitor_pipewire.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/restore_token_manager.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_portal.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_stream_utils.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
+-    ]
+-
+-if CONFIG["CPU_ARCH"] == "mips32":
+-
+-    DEFINES["MIPS32_LE"] = True
+-    DEFINES["MIPS_FPU_LE"] = True
+-    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
+-    DEFINES["_GNU_SOURCE"] = True
+-
+-    LOCAL_INCLUDES += [
+-        "/gfx/angle/checkout/include/",
+-        "/third_party/drm/drm/",
+-        "/third_party/drm/drm/include/",
+-        "/third_party/drm/drm/include/libdrm/",
+-        "/third_party/gbm/gbm/",
+-        "/third_party/libepoxy/libepoxy/include/",
+-        "/third_party/pipewire/"
+-    ]
+-
+-    SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc"
+-    ]
+-
+-    UNIFIED_SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/egl_dmabuf.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/mouse_cursor_monitor_pipewire.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/restore_token_manager.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_portal.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_stream_utils.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
+-    ]
+-
+-if CONFIG["CPU_ARCH"] == "mips64":
+-
+-    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
+-    DEFINES["_GNU_SOURCE"] = True
+-
+-    LOCAL_INCLUDES += [
+-        "/gfx/angle/checkout/include/",
+-        "/third_party/drm/drm/",
+-        "/third_party/drm/drm/include/",
+-        "/third_party/drm/drm/include/libdrm/",
+-        "/third_party/gbm/gbm/",
+-        "/third_party/libepoxy/libepoxy/include/",
+-        "/third_party/pipewire/"
+-    ]
+-
+-    SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc"
+-    ]
+-
+-    UNIFIED_SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/egl_dmabuf.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/mouse_cursor_monitor_pipewire.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/restore_token_manager.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_portal.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_stream_utils.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
+-    ]
+-
+ if CONFIG["CPU_ARCH"] == "ppc64":
+ 
+     DEFINES["USE_X11"] = "1"
+@@ -410,97 +314,6 @@ if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
+ 
+     DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
+ 
+-if CONFIG["CPU_ARCH"] == "aarch64" and CONFIG["OS_TARGET"] == "Linux":
+-
+-    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
+-    DEFINES["_GNU_SOURCE"] = True
+-
+-    LOCAL_INCLUDES += [
+-        "/gfx/angle/checkout/include/",
+-        "/third_party/drm/drm/",
+-        "/third_party/drm/drm/include/",
+-        "/third_party/drm/drm/include/libdrm/",
+-        "/third_party/gbm/gbm/",
+-        "/third_party/libepoxy/libepoxy/include/",
+-        "/third_party/pipewire/"
+-    ]
+-
+-    SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc"
+-    ]
+-
+-    UNIFIED_SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/egl_dmabuf.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/mouse_cursor_monitor_pipewire.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/restore_token_manager.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_portal.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_stream_utils.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
+-    ]
+-
+-if CONFIG["CPU_ARCH"] == "x86" and CONFIG["OS_TARGET"] == "Linux":
+-
+-    CXXFLAGS += [
+-        "-msse2"
+-    ]
+-
+-    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
+-    DEFINES["_GNU_SOURCE"] = True
+-
+-    LOCAL_INCLUDES += [
+-        "/gfx/angle/checkout/include/",
+-        "/third_party/drm/drm/",
+-        "/third_party/drm/drm/include/",
+-        "/third_party/drm/drm/include/libdrm/",
+-        "/third_party/gbm/gbm/",
+-        "/third_party/libepoxy/libepoxy/include/",
+-        "/third_party/pipewire/"
+-    ]
+-
+-    SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc"
+-    ]
+-
+-    UNIFIED_SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/egl_dmabuf.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/mouse_cursor_monitor_pipewire.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/restore_token_manager.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_portal.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_stream_utils.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
+-    ]
+-
+-if CONFIG["CPU_ARCH"] == "x86_64" and CONFIG["OS_TARGET"] == "Linux":
+-
+-    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
+-    DEFINES["_GNU_SOURCE"] = True
+-
+-    LOCAL_INCLUDES += [
+-        "/gfx/angle/checkout/include/",
+-        "/third_party/drm/drm/",
+-        "/third_party/drm/drm/include/",
+-        "/third_party/drm/drm/include/libdrm/",
+-        "/third_party/gbm/gbm/",
+-        "/third_party/libepoxy/libepoxy/include/",
+-        "/third_party/pipewire/"
+-    ]
+-
+-    SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc"
+-    ]
+-
+-    UNIFIED_SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/egl_dmabuf.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/mouse_cursor_monitor_pipewire.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/restore_token_manager.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_portal.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/screencast_stream_utils.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
+-    ]
+-
+ if CONFIG["CPU_ARCH"] == "aarch64" and CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux":
+ 
+     DEFINES["USE_X11"] = "1"
+diff --git a/third_party/libwebrtc/modules/portal/portal_gn/moz.build b/third_party/libwebrtc/modules/portal/portal_gn/moz.build
+index 77603c780b..e6f2c9e724 100644
+--- a/third_party/libwebrtc/modules/portal/portal_gn/moz.build
++++ b/third_party/libwebrtc/modules/portal/portal_gn/moz.build
+@@ -26,7 +26,7 @@ DEFINES["WEBRTC_MOZILLA_BUILD"] = True
+ DEFINES["WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS"] = "0"
+ DEFINES["WEBRTC_POSIX"] = True
+ DEFINES["WEBRTC_STRICT_FIELD_TRIALS"] = "0"
+-DEFINES["WEBRTC_USE_PIPEWIRE"] = True
++DEFINES["WEBRTC_USE_PIPEWIRE"] = False
+ DEFINES["_FILE_OFFSET_BITS"] = "64"
+ DEFINES["_GNU_SOURCE"] = True
+ DEFINES["_LARGEFILE64_SOURCE"] = True
+diff --git a/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build b/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build
+index 86a0daf8fa..e895f2eb15 100644
+--- a/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build
++++ b/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build
+@@ -24,7 +24,7 @@ DEFINES["WEBRTC_MOZILLA_BUILD"] = True
+ DEFINES["WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS"] = "0"
+ DEFINES["WEBRTC_POSIX"] = True
+ DEFINES["WEBRTC_STRICT_FIELD_TRIALS"] = "0"
+-DEFINES["WEBRTC_USE_PIPEWIRE"] = True
++DEFINES["WEBRTC_USE_PIPEWIRE"] = False
+ DEFINES["_FILE_OFFSET_BITS"] = "64"
+ DEFINES["_GNU_SOURCE"] = True
+ DEFINES["_LARGEFILE64_SOURCE"] = True

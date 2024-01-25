@@ -1,0 +1,12 @@
+diff -up firefox-91.0.1/python/mozbuild/mozbuild/frontend/context.py.rhel7-nasm firefox-91.0.1/python/mozbuild/mozbuild/frontend/context.py
+--- firefox-91.0.1/python/mozbuild/mozbuild/frontend/context.py.rhel7-nasm	2021-08-31 08:02:10.814740774 +0200
++++ firefox-91.0.1/python/mozbuild/mozbuild/frontend/context.py	2021-08-31 08:04:03.967146994 +0200
+@@ -420,7 +420,7 @@ class AsmFlags(BaseCompileFlags):
+                 if self._context.config.substs.get("OS_ARCH") == "WINNT":
+                     debug_flags += ["-F", "cv8"]
+                 elif self._context.config.substs.get("OS_ARCH") != "Darwin":
+-                    debug_flags += ["-F", "dwarf"]
++                    debug_flags += ["-f", "elf32"]
+             elif (
+                 self._context.config.substs.get("OS_ARCH") == "WINNT"
+                 and self._context.config.substs.get("CPU_ARCH") == "aarch64"

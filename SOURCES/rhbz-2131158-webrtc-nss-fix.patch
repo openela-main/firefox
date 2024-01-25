@@ -1,0 +1,25 @@
+diff -up firefox-102.3.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c.webrtc-fix firefox-102.3.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
+--- firefox-102.3.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c.webrtc-fix	2022-10-04 18:58:30.563683229 +0200
++++ firefox-102.3.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c	2022-10-04 18:58:44.583652963 +0200
+@@ -293,7 +293,7 @@ static srtp_err_status_t srtp_aes_gcm_ns
+ 
+     int rv;
+     SECItem param = { siBuffer, (unsigned char *)&c->params,
+-                      sizeof(CK_GCM_PARAMS) };
++                      sizeof(CK_NSS_GCM_PARAMS) };
+     if (encrypt) {
+         rv = PK11_Encrypt(c->key, CKM_AES_GCM, &param, buf, enc_len,
+                           *enc_len + 16, buf, *enc_len);
+diff -up firefox-102.3.0/third_party/libsrtp/src/crypto/include/aes_gcm.h.webrtc-fix firefox-102.3.0/third_party/libsrtp/src/crypto/include/aes_gcm.h
+--- firefox-102.3.0/third_party/libsrtp/src/crypto/include/aes_gcm.h.webrtc-fix	2022-10-04 18:59:16.635583764 +0200
++++ firefox-102.3.0/third_party/libsrtp/src/crypto/include/aes_gcm.h	2022-10-04 18:59:31.848550924 +0200
+@@ -101,7 +101,7 @@ typedef struct {
+     uint8_t iv[12];
+     uint8_t aad[MAX_AD_SIZE];
+     int aad_size;
+-    CK_GCM_PARAMS params;
++    CK_NSS_GCM_PARAMS params;
+     uint8_t tag[16];
+ } srtp_aes_gcm_ctx_t;
+ 
+diff -up firefox-102.3.0/third_party/prio/prio/encrypt.c.webrtc-fix firefox-102.3.0/third_party/prio/prio/encrypt.c
