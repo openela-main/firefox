@@ -1,0 +1,82 @@
+diff -up firefox-114.0/widget/gtk/nsWindow.cpp.D110204-fscreen.diff firefox-114.0/widget/gtk/nsWindow.cpp
+--- firefox-114.0/widget/gtk/nsWindow.cpp.D110204-fscreen.diff	2023-05-17 10:43:02.000000000 +0200
++++ firefox-114.0/widget/gtk/nsWindow.cpp	2023-05-17 13:53:54.000443278 +0200
+@@ -100,6 +100,7 @@
+ #include "ScreenHelperGTK.h"
+ #include "SystemTimeConverter.h"
+ #include "WidgetUtilsGtk.h"
++#include "nsIBrowserHandler.h"
+ 
+ #ifdef ACCESSIBILITY
+ #  include "mozilla/a11y/LocalAccessible.h"
+@@ -173,7 +174,8 @@ const gint kEvents = GDK_TOUCHPAD_GESTUR
+                      GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK |
+                      GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+                      GDK_SMOOTH_SCROLL_MASK | GDK_TOUCH_MASK | GDK_SCROLL_MASK |
+-                     GDK_POINTER_MOTION_MASK | GDK_PROPERTY_CHANGE_MASK;
++                     GDK_POINTER_MOTION_MASK | GDK_PROPERTY_CHANGE_MASK |
++                     GDK_FOCUS_CHANGE_MASK;
+ 
+ /* utility functions */
+ static bool is_mouse_in_window(GdkWindow* aWindow, gdouble aMouseX,
+@@ -433,7 +435,8 @@ nsWindow::nsWindow()
+       mResizedAfterMoveToRect(false),
+       mConfiguredClearColor(false),
+       mGotNonBlankPaint(false),
+-      mNeedsToRetryCapturingMouse(false) {
++      mNeedsToRetryCapturingMouse(false),
++      mPendingFullscreen(false) {
+   mWindowType = WindowType::Child;
+   mSizeConstraints.mMaxSize = GetSafeWindowSize(mSizeConstraints.mMaxSize);
+ 
+@@ -5263,6 +5266,19 @@ void nsWindow::OnWindowStateEvent(GtkWid
+       ClearTransparencyBitmap();
+     }
+   }
++
++  // Hack to ensure window switched to fullscreen - avoid to fail when starting
++  // in kiosk mode
++  if (mPendingFullscreen &&
++      !(aEvent->new_window_state & GDK_WINDOW_STATE_FULLSCREEN)) {
++    LOG(
++        "  Window should be fullscreen, but it's not, retrying set to "
++         "fullscreen.\n");
++    MakeFullScreen(true);
++  } else {
++    LOG("  Window successfully switched to fullscreen, happy now\n");
++    mPendingFullscreen = false;
++  }
+ }
+ 
+ void nsWindow::OnDPIChanged() {
+@@ -7409,6 +7425,19 @@ nsresult nsWindow::MakeFullScreen(bool a
+       }
+     }
+ 
++    // if in kiosk, ensure the fullscreen is called
++    nsCOMPtr<nsIBrowserHandler> browserHandler =
++        do_GetService("@mozilla.org/browser/clh;1");
++    if (browserHandler) {
++      bool isKiosk;
++      browserHandler->GetKiosk(&isKiosk);
++      if (isKiosk) {
++        LOG("  is kiosk, ensure the window switch to fullscreen\n");
++        mPendingFullscreen = true;
++      }
++    } else {
++      LOG("  Cannot find the browserHandler service.\n");
++    }
+     gtk_window_fullscreen(GTK_WINDOW(mShell));
+   } else {
+     gtk_window_unfullscreen(GTK_WINDOW(mShell));
+diff -up firefox-114.0/widget/gtk/nsWindow.h.D110204-fscreen.diff firefox-114.0/widget/gtk/nsWindow.h
+--- firefox-114.0/widget/gtk/nsWindow.h.D110204-fscreen.diff	2023-05-17 08:46:16.000000000 +0200
++++ firefox-114.0/widget/gtk/nsWindow.h	2023-05-17 13:51:29.502159247 +0200
+@@ -752,6 +752,7 @@ class nsWindow final : public nsBaseWidg
+    * move-to-rect callback we set mMovedAfterMoveToRect/mResizedAfterMoveToRect.
+    */
+   bool mWaitingForMoveToRectCallback : 1;
++  bool mPendingFullscreen : 1;
+   bool mMovedAfterMoveToRect : 1;
+   bool mResizedAfterMoveToRect : 1;
+ 

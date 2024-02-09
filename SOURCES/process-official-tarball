@@ -1,0 +1,23 @@
+#!/bin/sh
+
+rm -rf ./process-tarball-dir
+mkdir ./process-tarball-dir
+tar -xJf $1 --directory process-tarball-dir
+
+rm -vf ./process-tarball-dir/*/testing/web-platform/tests/conformance-checkers/html-rdfa/0030-isvalid.html
+rm -vf ./process-tarball-dir/*/testing/web-platform/tests/conformance-checkers/html-rdfa/0008-isvalid.html
+rm -vf ./process-tarball-dir/*/testing/web-platform/tests/conformance-checkers/html-rdfalite/0030-isvalid.html
+rm -vf ./process-tarball-dir/*/testing/web-platform/tests/css/css-ui/support/cursors/woolly-64.svg
+rm -vf ./process-tarball-dir/*/testing/web-platform/tests/css/css-ui/support/cursors/woolly.svg
+rm -vf ./process-tarball-dir/*/testing/web-platform/tests/conformance-checkers/html-rdfa/0230-novalid.html
+rm -vf ./process-tarball-dir/*/testing/web-platform/tests/conformance-checkers/html-rdfa/0231-isvalid.html
+rm -vf ./process-tarball-dir/*/layout/inspector/tests/chrome/test_fontVariationsAPI.css
+
+processed_tarball=${1/source/processed-source}
+
+cd ./process-tarball-dir
+tar -cf - ./* | xz -9 -T 0 -f > $processed_tarball
+mv $processed_tarball ..
+cd ..
+
+rm -rf ./process-tarball-dir

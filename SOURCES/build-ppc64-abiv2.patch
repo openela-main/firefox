@@ -1,0 +1,12 @@
+diff -up firefox-115.0.2/security/nss/lib/freebl/sha512-p8.s.ppc-abiv2 firefox-115.0.2/security/nss/lib/freebl/sha512-p8.s
+--- firefox-115.0.2/security/nss/lib/freebl/sha512-p8.s.ppc-abiv2	2023-07-25 09:01:42.602375809 +0200
++++ firefox-115.0.2/security/nss/lib/freebl/sha512-p8.s	2023-07-25 09:01:48.273373924 +0200
+@@ -3,7 +3,7 @@
+ # See the full LICENSE under scripts/.
+ 
+ .machine	"any"
+-.abiversion	2
++.abiversion	1
+ .text
+ 
+ .globl	sha512_block_p8

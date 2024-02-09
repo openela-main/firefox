@@ -1,0 +1,11 @@
+--- firefox-102.4.0/python/mozbuild/mozbuild/nodeutil.py.lower-node-min-version	2022-10-10 17:55:56.000000000 +0200
++++ firefox-102.4.0/python/mozbuild/mozbuild/nodeutil.py	2022-10-17 14:57:47.476182627 +0200
+@@ -13,7 +13,7 @@ from mozboot.util import get_tools_dir
+ from mozfile import which
+ from six import PY3
+ 
+-NODE_MIN_VERSION = StrictVersion("12.22.12")
++NODE_MIN_VERSION = StrictVersion("10.24.0")
+ NPM_MIN_VERSION = StrictVersion("6.14.16")
+ 
+ 
