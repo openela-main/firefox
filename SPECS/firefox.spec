@@ -1,3 +1,4 @@
+%define homepage %(grep '^HOME_URL\s*=' /etc/os-release | sed 's/^HOME_URL\s*=//;s/^\s*"//;s/"\s*$//')
 %global disable_toolsets  0
 
 # Produce debug (non-optimized) package build. Suitable for debugging only
@@ -131,7 +132,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              115.3.1
+Version:              115.4.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -157,7 +158,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20230929.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20231017.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -228,6 +229,9 @@ Patch155:             rhbz-1354671.patch
 # GENDIFF_DIFF_ARGS=-U0 gendiff firefox-xxxx .firefox-tests-xpcshell
 # GENDIFF_DIFF_ARGS=-U0 gendiff firefox-xxxx .firefox-tests-reftest
 Patch201:             firefox-tests-xpcshell-freeze.patch
+
+# ---- Security patches ----
+Patch301:             CVE-2023-44488-libvpx.patch
 
 # BUILD REQURES/REQUIRES
 %if %{?system_nss} && !0%{?bundle_nss}
@@ -973,15 +977,15 @@ to run Firefox explicitly on X11.
 %prep
 echo "Build environment"
 echo "--------------------------------------------"
-echo "dist                  %{?dist}"
-echo "RHEL 8 minor version: %{?rhel_minor_version}"
-echo "bundle_nss            %{?bundle_nss}"
-echo "system_nss            %{?system_nss}"
-echo "use_rust_ts           %{?use_rust_ts}"
-echo "use_dts               %{?use_dts}"
-echo "use_nodejs_scl        %{?use_nodejs_scl}"
-echo "use_llvm_ts           %{?use_llvm_ts}"
-echo "use_python3_scl       %{?use_python3_scl}"
+echo "dist                %{?dist}"
+echo "RHEL minor version: %{?rhel_minor_version}"
+echo "bundle_nss          %{?bundle_nss}"
+echo "system_nss          %{?system_nss}"
+echo "use_rust_ts         %{?use_rust_ts}"
+echo "use_dts             %{?use_dts}"
+echo "use_nodejs_scl      %{?use_nodejs_scl}"
+echo "use_llvm_ts         %{?use_llvm_ts}"
+echo "use_python3_scl     %{?use_python3_scl}"
 echo "--------------------------------------------"
 %setup -q -n %{name}-%{version}
 
@@ -1033,6 +1037,11 @@ echo "--------------------------------------------"
 
 # ---- Test patches ----
 %patch -P201 -p1 -b .firefox-tests-xpcshell-freeze
+
+# ---- Security patches ----
+cd media/libvpx/libvpx
+%patch -P301 -p1 -b .CVE-2023-44488-libvpx
+cd -
 
 %{__rm} -f .mozconfig
 %{__cp} %{SOURCE10} .mozconfig
@@ -1544,6 +1553,7 @@ ln -s %{mozappdir}/defaults/preferences $RPM_BUILD_ROOT/%{mozappdir}/browser/def
 # Default preferences
 %{__cp} %{SOURCE12} %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
 sed -i -e 's|%PREFIX%|%{_prefix}|' %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
+sed -i -e 's|%HOMEPAGE%|%{homepage}|' %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
 # Enable modern crypto for the key export on the RHEL9 only (rhbz#1764205)
 %if 0%{?rhel} == 9
   echo 'pref("security.pki.use_modern_crypto_with_pkcs12", true);' >> %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
@@ -1717,9 +1727,14 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Jan 25 2024 Release Engineering <releng@openela.org> - 115.3.1
+* Fri Feb 09 2024 Release Engineering <releng@openela.org> - 115.4.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Oct 17 2023 Eike Rathke <erack@redhat.com> - 115.4.0-1
+- Update to 115.4.0 build1
+- Add fix for CVE-2023-44488
+- Set homepage from os-release HOME_URL
 
 * Fri Sep 29 2023 Eike Rathke <erack@redhat.com> - 115.3.1-1
 - Update to 115.3.1
