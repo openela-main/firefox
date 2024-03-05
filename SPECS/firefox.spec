@@ -1,3 +1,4 @@
+%define homepage %(grep '^HOME_URL\s*=' /etc/os-release | sed 's/^HOME_URL\s*=//;s/^\s*"//;s/"\s*$//')
 %global disable_toolsets  0
 
 # Produce debug (non-optimized) package build. Suitable for debugging only
@@ -23,7 +24,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el8")
   if match then
-     return 9
+     return 10
   end
   match = string.match(str, ".module%+el9.%d+")
   if match then
@@ -35,7 +36,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el9")
   if match then
-     return 3
+     return 4
   end
   return -1
 end}
@@ -89,11 +90,11 @@ end}
 %endif
 
 %if 0%{?rhel} == 7
-  %global use_dts         1
+  %global use_dts          1
   %global use_llvm_ts      1
   %global use_nodejs_scl   1
   %global nodejs_build_req rh-nodejs10-nodejs
-  %global llvm_version    11.0
+  %global llvm_version     11.0
   %global use_python3_scl  1
 %endif
 
@@ -113,8 +114,8 @@ end}
 %endif
 
 
-%global mozappdir     %{_libdir}/firefox
-%global langpackdir   %{mozappdir}/browser/extensions
+%global mozappdir            %{_libdir}/firefox
+%global langpackdir          %{mozappdir}/browser/extensions
 %define bundled_install_path %{mozappdir}/bundled
 %global pre_version          esr
 # Workaround the dreaded "upstream source file changed content" rpminspect failure.
@@ -131,7 +132,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              115.3.1
+Version:              115.8.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -140,10 +141,15 @@ License:              MPLv1.1 or GPLv2+ or LGPLv2+
 ExcludeArch:          %{ix86}
 %endif
 %if 0%{?rhel} == 8
+  # Started to ship on aarch64 in RHEL 8.2, on s390x in RHEL 8.3
   %if %{rhel_minor_version} == 1
-ExcludeArch:          %{ix86} aarch64 s390x
+ExcludeArch:          %{ix86} s390x aarch64
   %else
+    %if %{rhel_minor_version} == 2
+ExcludeArch:          %{ix86} s390x
+    %else
 ExcludeArch:          %{ix86}
+    %endif
   %endif
 %endif
 %if 0%{?rhel} == 7
@@ -157,7 +163,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20230929.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20240213.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -228,6 +234,9 @@ Patch155:             rhbz-1354671.patch
 # GENDIFF_DIFF_ARGS=-U0 gendiff firefox-xxxx .firefox-tests-xpcshell
 # GENDIFF_DIFF_ARGS=-U0 gendiff firefox-xxxx .firefox-tests-reftest
 Patch201:             firefox-tests-xpcshell-freeze.patch
+
+# ---- Security patches ----
+Patch301:             CVE-2023-44488-libvpx.patch
 
 # BUILD REQURES/REQUIRES
 %if %{?system_nss} && !0%{?bundle_nss}
@@ -301,7 +310,7 @@ BuildRequires:        rust >= %{rust_version}
 
 %if 0%{?rhel} == 9
 BuildRequires:        cargo
-BuildRequires:        clang clang-libs llvm
+BuildRequires:        clang clang-libs llvm llvm-devel
 BuildRequires:        gcc
 BuildRequires:        gcc-c++
 BuildRequires:        python3-devel
@@ -973,15 +982,15 @@ to run Firefox explicitly on X11.
 %prep
 echo "Build environment"
 echo "--------------------------------------------"
-echo "dist                  %{?dist}"
-echo "RHEL 8 minor version: %{?rhel_minor_version}"
-echo "bundle_nss            %{?bundle_nss}"
-echo "system_nss            %{?system_nss}"
-echo "use_rust_ts           %{?use_rust_ts}"
-echo "use_dts               %{?use_dts}"
-echo "use_nodejs_scl        %{?use_nodejs_scl}"
-echo "use_llvm_ts           %{?use_llvm_ts}"
-echo "use_python3_scl       %{?use_python3_scl}"
+echo "dist                %{?dist}"
+echo "RHEL minor version: %{?rhel_minor_version}"
+echo "bundle_nss          %{?bundle_nss}"
+echo "system_nss          %{?system_nss}"
+echo "use_rust_ts         %{?use_rust_ts}"
+echo "use_dts             %{?use_dts}"
+echo "use_nodejs_scl      %{?use_nodejs_scl}"
+echo "use_llvm_ts         %{?use_llvm_ts}"
+echo "use_python3_scl     %{?use_python3_scl}"
 echo "--------------------------------------------"
 %setup -q -n %{name}-%{version}
 
@@ -1033,6 +1042,11 @@ echo "--------------------------------------------"
 
 # ---- Test patches ----
 %patch -P201 -p1 -b .firefox-tests-xpcshell-freeze
+
+# ---- Security patches ----
+cd media/libvpx/libvpx
+%patch -P301 -p1 -b .CVE-2023-44488-libvpx
+cd -
 
 %{__rm} -f .mozconfig
 %{__cp} %{SOURCE10} .mozconfig
@@ -1106,6 +1120,13 @@ echo "ac_add_options --disable-av1" >> .mozconfig
 echo "ac_add_options --with-mozilla-api-keyfile=`pwd`/mozilla-api-key" >> .mozconfig
 echo "ac_add_options --with-google-location-service-api-keyfile=`pwd`/google-loc-api-key" >> .mozconfig
 echo "ac_add_options --with-google-safebrowsing-api-keyfile=`pwd`/google-api-key" >> .mozconfig
+
+# May result in empty --with-libclang-path= in earlier versions.
+# So far this is needed only for c8s/c9s.
+%if (0%{?rhel} == 8 && %{rhel_minor_version} >= 10) || (0%{?rhel} == 9 && %{rhel_minor_version} >= 4)
+# Clang 17 upstream's detection fails, tell it where to look.
+echo "ac_add_options --with-libclang-path=`llvm-config --libdir`" >> .mozconfig
+%endif
 
 echo 'export NODEJS="%{_buildrootdir}/bin/node-stdout-nonblocking-wrapper"' >> .mozconfig
 
@@ -1544,6 +1565,7 @@ ln -s %{mozappdir}/defaults/preferences $RPM_BUILD_ROOT/%{mozappdir}/browser/def
 # Default preferences
 %{__cp} %{SOURCE12} %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
 sed -i -e 's|%PREFIX%|%{_prefix}|' %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
+sed -i -e 's|%HOMEPAGE%|%{homepage}|' %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
 # Enable modern crypto for the key export on the RHEL9 only (rhbz#1764205)
 %if 0%{?rhel} == 9
   echo 'pref("security.pki.use_modern_crypto_with_pkcs12", true);' >> %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
@@ -1609,6 +1631,17 @@ rm -rf %{buildroot}%{mozappdir}/gtk2/
 ln -sf /usr/lib64/libnss3.so %{buildroot}%{_libdir}/libnss3.so
 ln -sf /usr/lib64/pkcs11/p11-kit-client.so %{buildroot}%{_libdir}/libnssckbi.so
 %endif
+
+# clean the created bundled rpms if there are any
+rm -rf %{_srcrpmdir}/libffi*.src.rpm
+find %{_rpmdir} -name "libffi*.rpm" -delete
+rm -rf %{_srcrpmdir}/openssl*.src.rpm
+find %{_rpmdir} -name "openssl*.rpm" -delete
+rm -rf %{_srcrpmdir}/nss*.src.rpm
+find %{_rpmdir} -name "nss*.rpm" -delete
+rm -rf %{_srcrpmdir}/nspr*.src.rpm
+find %{_rpmdir} -name "nspr*.rpm" -delete
+
 #---------------------------------------------------------------------
 
 %check
@@ -1621,16 +1654,6 @@ if [ $1 -eq 0 ]; then
   %{__rm} -rf %{mozappdir}/extensions
   %{__rm} -rf %{mozappdir}/plugins
 fi
-
-%clean
-rm -rf %{_srcrpmdir}/libffi*.src.rpm
-find %{_rpmdir} -name "libffi*.rpm" -delete
-rm -rf %{_srcrpmdir}/openssl*.src.rpm
-find %{_rpmdir} -name "openssl*.rpm" -delete
-rm -rf %{_srcrpmdir}/nss*.src.rpm
-find %{_rpmdir} -name "nss*.rpm" -delete
-rm -rf %{_srcrpmdir}/nspr*.src.rpm
-find %{_rpmdir} -name "nspr*.rpm" -delete
 
 %post
 update-desktop-database &> /dev/null || :
@@ -1717,9 +1740,26 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Fri Feb 09 2024 Release Engineering <releng@openela.org> - 115.3.1
+* Tue Mar 05 2024 Release Engineering <releng@openela.org> - 115.8.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Feb 13 2024 Eike Rathke <erack@redhat.com> - 115.8.0-1
+- Update to 115.8.0 build1
+
+* Tue Jan 16 2024 Eike Rathke <erack@redhat.com> - 115.7.0-1
+- Update to 115.7.0 build1
+
+* Tue Dec 12 2023 Eike Rathke <erack@redhat.com> - 115.6.0-1
+- Update to 115.6.0 build1
+
+* Tue Nov 14 2023 Eike Rathke <erack@redhat.com> - 115.5.0-1
+- Update to 115.5.0 build1
+
+* Tue Oct 17 2023 Eike Rathke <erack@redhat.com> - 115.4.0-1
+- Update to 115.4.0 build1
+- Add fix for CVE-2023-44488
+- Set homepage from os-release HOME_URL
 
 * Fri Sep 29 2023 Eike Rathke <erack@redhat.com> - 115.3.1-1
 - Update to 115.3.1
