@@ -133,7 +133,7 @@ end}
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
 Version:              115.9.1
-Release:              1%{?dist}
+Release:              2%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -237,7 +237,6 @@ Patch201:             firefox-tests-xpcshell-freeze.patch
 
 # ---- Security patches ----
 Patch301:             CVE-2023-44488-libvpx.patch
-Patch302:             expat-CVE-2023-52425.patch
 
 # BUILD REQURES/REQUIRES
 %if %{?system_nss} && !0%{?bundle_nss}
@@ -1048,7 +1047,6 @@ echo "--------------------------------------------"
 cd media/libvpx/libvpx
 %patch -P301 -p1 -b .CVE-2023-44488-libvpx
 cd -
-%patch -P302 -p1 -b .expat-CVE-2023-52425
 
 %{__rm} -f .mozconfig
 %{__cp} %{SOURCE10} .mozconfig
@@ -1742,9 +1740,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Tue Mar 26 2024 Release Engineering <releng@openela.org> - 115.9.1
+* Thu Apr 11 2024 Release Engineering <releng@openela.org> - 115.9.1
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Apr 09 2024 Jan Horak <jhorak@redhat.com> - 115.9.1-2
+- Removed expat CVE fix
 
 * Fri Mar 22 2024 Eike Rathke <erack@redhat.com> - 115.9.1-1
 - Update to 115.9.1
