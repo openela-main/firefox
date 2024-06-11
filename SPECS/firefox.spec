@@ -36,7 +36,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el9")
   if match then
-     return 4
+     return 5
   end
   return -1
 end}
@@ -132,7 +132,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              115.10.0
+Version:              115.11.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -163,7 +163,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20240409.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20240507.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -1122,8 +1122,8 @@ echo "ac_add_options --with-google-location-service-api-keyfile=`pwd`/google-loc
 echo "ac_add_options --with-google-safebrowsing-api-keyfile=`pwd`/google-api-key" >> .mozconfig
 
 # May result in empty --with-libclang-path= in earlier versions.
-# So far this is needed only for c8s/c9s.
-%if (0%{?rhel} == 8 && %{rhel_minor_version} >= 10) || (0%{?rhel} == 9 && %{rhel_minor_version} >= 4)
+# So far this is needed only for c8s.
+%if 0%{?rhel} == 8 && %{rhel_minor_version} >= 10
 # Clang 17 upstream's detection fails, tell it where to look.
 echo "ac_add_options --with-libclang-path=`llvm-config --libdir`" >> .mozconfig
 %endif
@@ -1740,9 +1740,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Fri Apr 19 2024 Release Engineering <releng@openela.org> - 115.10.0
+* Tue Jun 11 2024 Release Engineering <releng@openela.org> - 115.11.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue May 07 2024 Eike Rathke <erack@redhat.com> - 115.11.0-1
+- Update to 115.11.0 build1
 
 * Tue Apr 09 2024 Eike Rathke <erack@redhat.com> - 115.10.0-1
 - Update to 115.10.0 build1

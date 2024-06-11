@@ -1,6 +1,6 @@
+SOURCES/mochitest-python.tar.gz
 SOURCES/nss-3.90.0-3.el8_1.src.rpm
 SOURCES/nss-3.90.0-3.el9_0.src.rpm
 SOURCES/cbindgen-vendor.tar.xz
-SOURCES/firefox-115.10.0esr.processed-source.tar.xz
-SOURCES/firefox-langpacks-115.10.0esr-20240409.tar.xz
-SOURCES/mochitest-python.tar.gz
+SOURCES/firefox-115.11.0esr.processed-source.tar.xz
+SOURCES/firefox-langpacks-115.11.0esr-20240507.tar.xz
