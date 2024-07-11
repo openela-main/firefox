@@ -122,7 +122,7 @@ end}
 # If set to .b2 or .b3 ... the processed source file needs to be renamed before upload, e.g.
 # firefox-102.8.0esr.b2.processed-source.tar.xz
 # When unset use processed source file name as is.
-##global buildnum .b2
+%global buildnum .b3
 
 %bcond_without langpacks
 
@@ -132,8 +132,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              115.12.0
-Release:              1%{?dist}
+Version:              115.13.0
+Release:              3%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -163,7 +163,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20240604.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20240708.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -1740,9 +1740,18 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Jun 17 2024 Release Engineering <releng@openela.org> - 115.12.0
+* Thu Jul 11 2024 Release Engineering <releng@openela.org> - 115.13.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Mon Jul 08 2024 Tomas Popela <tpopela@redhat.com> - 115.13.0-3
+- Update to 115.13.0 build3
+
+* Tue Jul 02 2024 Eike Rathke <erack@redhat.com> - 115.13.0-2
+- Update to 115.13.0 build2
+
+* Mon Jul 01 2024 Eike Rathke <erack@redhat.com> - 115.13.0-1
+- Update to 115.13.0 build1
 
 * Tue Jun 04 2024 Eike Rathke <erack@redhat.com> - 115.12.0-1
 - Update to 115.12.0 build1
