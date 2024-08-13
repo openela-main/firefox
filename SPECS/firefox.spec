@@ -122,7 +122,7 @@ end}
 # If set to .b2 or .b3 ... the processed source file needs to be renamed before upload, e.g.
 # firefox-102.8.0esr.b2.processed-source.tar.xz
 # When unset use processed source file name as is.
-%global buildnum .b3
+%global buildnum .b2
 
 %bcond_without langpacks
 
@@ -132,8 +132,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              115.13.0
-Release:              3%{?dist}
+Version:              115.14.0
+Release:              2%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -163,7 +163,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20240708.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20240801.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -205,6 +205,8 @@ Patch09:              rhbz-2131158-webrtc-nss-fix.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
+# https://github.com/rust-lang/rust-bindgen/pull/2689
+Patch52:              bindgen-clang18.patch
 
 # -- Submitted upstream, not merged --
 Patch101:             mozilla-bmo1636168-fscreen.patch
@@ -1018,6 +1020,7 @@ echo "--------------------------------------------"
 
 # -- Upstreamed patches --
 %patch -P51 -p1 -b .mozilla-bmo1170092
+%patch -P52 -p1 -b .bindgen-clang18
 
 # -- Submitted upstream, not merged --
 %patch -P101 -p1 -b .mozilla-bmo1636168-fscreen
@@ -1740,9 +1743,15 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Jul 11 2024 Release Engineering <releng@openela.org> - 115.13.0
+* Tue Aug 13 2024 Release Engineering <releng@openela.org> - 115.14.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Thu Aug 01 2024 Eike Rathke <erack@redhat.com> - 115.14.0-2
+- Update to 115.14.0 build2
+
+* Tue Jul 30 2024 Eike Rathke <erack@redhat.com> - 115.14.0-1
+- Update to 115.14.0 build1
 
 * Mon Jul 08 2024 Tomas Popela <tpopela@redhat.com> - 115.13.0-3
 - Update to 115.13.0 build3
