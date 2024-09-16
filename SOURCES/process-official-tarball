@@ -12,6 +12,11 @@ rm -vf ./process-tarball-dir/*/testing/web-platform/tests/css/css-ui/support/cur
 rm -vf ./process-tarball-dir/*/testing/web-platform/tests/conformance-checkers/html-rdfa/0230-novalid.html
 rm -vf ./process-tarball-dir/*/testing/web-platform/tests/conformance-checkers/html-rdfa/0231-isvalid.html
 rm -vf ./process-tarball-dir/*/layout/inspector/tests/chrome/test_fontVariationsAPI.css
+# A forbidden code point was found in:
+rm -vf ./process-tarball-dir/*/mobile/android/android-components/components/browser/errorpages/src/main/res/values-ar/strings.xml
+rm -vf ./process-tarball-dir/*/mobile/android/android-components/components/feature/addons/src/main/res/values-ur/strings.xml
+rm -vf ./process-tarball-dir/*/third_party/webkit/PerformanceTests/Speedometer3/resources/editors/dist/assets/codemirror-521de7ab.js
+rm -vf ./process-tarball-dir/*/third_party/python/pip/pip-24.0.dist-info/AUTHORS.txt
 
 processed_tarball=${1/source/processed-source}
 

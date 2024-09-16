@@ -1,6 +1,6 @@
-diff -up firefox-115.2.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1 firefox-115.2.0/gfx/2d/DrawTargetSkia.cpp
---- firefox-115.2.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1	2023-09-20 22:15:11.850172571 +0200
-+++ firefox-115.2.0/gfx/2d/DrawTargetSkia.cpp	2023-09-20 22:16:10.446147737 +0200
+diff -up firefox-128.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1 firefox-128.0/gfx/2d/DrawTargetSkia.cpp
+--- firefox-128.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1	2024-06-12 15:02:55.000000000 +0200
++++ firefox-128.0/gfx/2d/DrawTargetSkia.cpp	2024-06-13 11:36:54.550728034 +0200
 @@ -156,8 +156,8 @@ static IntRect CalculateSurfaceBounds(co
  }
  
@@ -12,9 +12,9 @@ diff -up firefox-115.2.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1 fire
  static bool VerifyRGBXFormat(uint8_t* aData, const IntSize& aSize,
                               const int32_t aStride, SurfaceFormat aFormat) {
    if (aFormat != SurfaceFormat::B8G8R8X8 || aSize.IsEmpty()) {
-diff -up firefox-115.2.0/gfx/2d/Types.h.mozilla-bmo1504834-part1 firefox-115.2.0/gfx/2d/Types.h
---- firefox-115.2.0/gfx/2d/Types.h.mozilla-bmo1504834-part1	2023-08-21 15:43:23.000000000 +0200
-+++ firefox-115.2.0/gfx/2d/Types.h	2023-09-20 22:15:11.850172571 +0200
+diff -up firefox-128.0/gfx/2d/Types.h.mozilla-bmo1504834-part1 firefox-128.0/gfx/2d/Types.h
+--- firefox-128.0/gfx/2d/Types.h.mozilla-bmo1504834-part1	2024-06-12 15:02:56.000000000 +0200
++++ firefox-128.0/gfx/2d/Types.h	2024-06-13 11:36:54.551728036 +0200
 @@ -89,18 +89,11 @@ enum class SurfaceFormat : int8_t {
    // This represents the unknown format.
    UNKNOWN,  // TODO: Replace uses with Maybe<SurfaceFormat>.
@@ -37,10 +37,10 @@ diff -up firefox-115.2.0/gfx/2d/Types.h.mozilla-bmo1504834-part1 firefox-115.2.0
  
    // The following values are OS and endian-independent synonyms.
    //
-diff -up firefox-115.2.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1 firefox-115.2.0/gfx/skia/skia/modules/skcms/skcms.cc
---- firefox-115.2.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1	2023-08-21 15:43:23.000000000 +0200
-+++ firefox-115.2.0/gfx/skia/skia/modules/skcms/skcms.cc	2023-09-20 22:15:11.851172570 +0200
-@@ -30,6 +30,8 @@
+diff -up firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1 firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc
+--- firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1	2024-06-12 15:02:57.000000000 +0200
++++ firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc	2024-06-13 11:38:45.377835856 +0200
+@@ -31,6 +31,8 @@
          #include <avx512fintrin.h>
          #include <avx512dqintrin.h>
      #endif
@@ -48,7 +48,7 @@ diff -up firefox-115.2.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834
 +    #define SKCMS_PORTABLE
  #endif
  
- static bool runtime_cpu_detection = true;
+ using namespace skcms_private;
 @@ -324,20 +326,28 @@ enum {
  static uint16_t read_big_u16(const uint8_t* ptr) {
      uint16_t be;

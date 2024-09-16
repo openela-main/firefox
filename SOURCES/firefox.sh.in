@@ -64,7 +64,6 @@ MOZ_DIST_BIN="$MOZ_LIB_DIR/firefox"
 MOZ_LANGPACKS_DIR="$MOZ_DIST_BIN/langpacks"
 MOZ_EXTENSIONS_PROFILE_DIR="$HOME/.mozilla/extensions/{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
 MOZ_PROGRAM="$MOZ_DIST_BIN/$MOZ_FIREFOX_FILE"
-MOZ_LAUNCHER="$MOZ_DIST_BIN/run-mozilla.sh"
 GETENFORCE_FILE="/usr/sbin/getenforce"
 
 ##
@@ -247,35 +246,6 @@ fi
 NSS_SSL_CBC_RANDOM_IV=${NSS_SSL_CBC_RANDOM_IV-1}
 export NSS_SSL_CBC_RANDOM_IV
 
-# Prepare command line arguments
-script_args=""
-pass_arg_count=0
-while [ $# -gt $pass_arg_count ]
-do
-  case "$1" in
-    -g | --debug)
-      script_args="$script_args -g"
-      debugging=1
-      shift
-      ;;
-    -d | --debugger)
-      if [ $# -gt 1 ]; then
-        script_args="$script_args -d $2"
-        shift 2
-      else
-        shift
-      fi
-      ;;
-    *)
-      # Move the unrecognized argument to the end of the list.
-      arg="$1"
-      shift
-      set -- "$@" "$arg"
-      pass_arg_count=`expr $pass_arg_count + 1`
-      ;;
-  esac
-done
-
 # Flatpak specific environment variables
 %FLATPAK_ENV_VARS%
 
@@ -286,7 +256,7 @@ export MOZ_ALLOW_DOWNGRADE=1
 debugging=0
 if [ $debugging = 1 ]
 then
-  echo $MOZ_LAUNCHER $script_args $MOZ_PROGRAM "$@"
+  echo $MOZ_PROGRAM "$@"
 fi
 
-exec $MOZ_LAUNCHER $script_args $MOZ_PROGRAM "$@"
+exec $MOZ_PROGRAM "$@"

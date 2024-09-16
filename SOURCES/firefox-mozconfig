@@ -21,9 +21,11 @@ ac_add_options --with-unsigned-addon-scopes=app,system
 
 export BUILD_OFFICIAL=1
 export MOZILLA_OFFICIAL=1
-export MOZ_TELEMETRY_REPORTING=1
 export MOZ_UPDATE_CHANNEL=release
 export MOZ_APP_REMOTINGNAME=firefox
+mk_add_options MOZ_TELEMETRY_REPORTING=
+mk_add_options MOZ_NORMANDY=
+mk_add_options MOZ_SERVICES_HEALTHREPORT=
 mk_add_options BUILD_OFFICIAL=1
 mk_add_options MOZILLA_OFFICIAL=1
 mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir
