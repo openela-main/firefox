@@ -1,0 +1,20 @@
+diff -up firefox-128.0/config/external/moz.build.libaom firefox-128.0/config/external/moz.build
+--- firefox-128.0/config/external/moz.build.libaom	2024-07-31 15:32:39.460374047 +0200
++++ firefox-128.0/config/external/moz.build	2024-07-31 15:34:41.646064796 +0200
+@@ -39,8 +39,8 @@ if CONFIG["MOZ_VORBIS"]:
+ if not CONFIG["MOZ_SYSTEM_LIBVPX"]:
+     external_dirs += ["media/libvpx"]
+ 
++external_dirs += ["media/libaom"]
+ if CONFIG["MOZ_AV1"]:
+-    external_dirs += ["media/libaom"]
+     external_dirs += ["media/libdav1d"]
+ 
+ if not CONFIG["MOZ_SYSTEM_PNG"]:
+diff -up firefox-128.0/third_party/aom/third_party/fastfeat/README.libaom firefox-128.0/third_party/aom/third_party/fastfeat/README
+diff -up firefox-128.0/third_party/aom/third_party/googletest/README.libaom firefox-128.0/third_party/aom/third_party/googletest/README
+diff -up firefox-128.0/third_party/aom/third_party/libwebm/README.libaom firefox-128.0/third_party/aom/third_party/libwebm/README
+diff -up firefox-128.0/third_party/aom/third_party/libyuv/README.libaom firefox-128.0/third_party/aom/third_party/libyuv/README
+diff -up firefox-128.0/third_party/aom/third_party/SVT-AV1/README.libaom firefox-128.0/third_party/aom/third_party/SVT-AV1/README
+diff -up firefox-128.0/third_party/aom/third_party/vector/README.libaom firefox-128.0/third_party/aom/third_party/vector/README
+diff -up firefox-128.0/third_party/aom/third_party/x86inc/README.libaom firefox-128.0/third_party/aom/third_party/x86inc/README

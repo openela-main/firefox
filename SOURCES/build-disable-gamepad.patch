@@ -1,0 +1,12 @@
+diff -up firefox-128.0/dom/gamepad/moz.build.gamepad firefox-128.0/dom/gamepad/moz.build
+--- firefox-128.0/dom/gamepad/moz.build.gamepad	2024-07-30 16:24:07.326519645 +0200
++++ firefox-128.0/dom/gamepad/moz.build	2024-07-30 16:24:15.817492673 +0200
+@@ -60,7 +60,7 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "wi
+ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+     UNIFIED_SOURCES += ["android/AndroidGamepad.cpp"]
+ elif CONFIG["OS_ARCH"] in ("Linux", "FreeBSD", "DragonFly"):
+-    UNIFIED_SOURCES += ["linux/LinuxGamepad.cpp"]
++    UNIFIED_SOURCES += ["fallback/FallbackGamepad.cpp"]
+ else:
+     UNIFIED_SOURCES += ["fallback/FallbackGamepad.cpp"]
+ 

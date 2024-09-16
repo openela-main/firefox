@@ -1,23 +1,23 @@
-diff --git a/dom/media/webrtc/third_party_build/webrtc.mozbuild b/dom/media/webrtc/third_party_build/webrtc.mozbuild
-index 30169c36c2..335e3cb1a1 100644
---- a/dom/media/webrtc/third_party_build/webrtc.mozbuild
-+++ b/dom/media/webrtc/third_party_build/webrtc.mozbuild
-@@ -35,6 +35,3 @@ if CONFIG['MOZ_WEBRTC']:
- 
-     if CONFIG['MOZ_X11']:
-         DEFINES['WEBRTC_USE_X11'] = True
--
--    if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
--        DEFINES['WEBRTC_USE_PIPEWIRE'] = True
-diff --git a/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build b/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build
-index 8c56b6b8e5..eaf8d7087a 100644
---- a/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build
-+++ b/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build
-@@ -232,102 +232,6 @@ if CONFIG["CPU_ARCH"] == "aarch64":
+diff -up firefox-128.0/dom/media/webrtc/third_party_build/webrtc.mozbuild.disable-pipewire firefox-128.0/dom/media/webrtc/third_party_build/webrtc.mozbuild
+--- firefox-128.0/dom/media/webrtc/third_party_build/webrtc.mozbuild.disable-pipewire	2024-07-17 14:01:36.290603114 +0200
++++ firefox-128.0/dom/media/webrtc/third_party_build/webrtc.mozbuild	2024-07-17 14:52:02.039208338 +0200
+@@ -31,7 +31,7 @@ if CONFIG["MOZ_WEBRTC"]:
+                 and CONFIG["TARGET_CPU"].startswith("mips")
+             )
+         ):
+-            DEFINES["WEBRTC_USE_PIPEWIRE"] = True
++            DEFINES["WEBRTC_USE_PIPEWIRE"] = False
+     elif CONFIG["OS_TARGET"] == "Darwin":
+         DEFINES["WEBRTC_MAC"] = True
+     elif CONFIG["OS_TARGET"] == "WINNT":
+diff -up firefox-128.0/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build.disable-pipewire firefox-128.0/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build
+--- firefox-128.0/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build.disable-pipewire	2024-07-17 14:01:36.291603109 +0200
++++ firefox-128.0/third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn/moz.build	2024-07-17 14:56:35.419826494 +0200
+@@ -241,102 +241,6 @@ if CONFIG["TARGET_CPU"] == "aarch64":
      DEFINES["WEBRTC_ARCH_ARM64"] = True
      DEFINES["WEBRTC_HAS_NEON"] = True
  
--if CONFIG["CPU_ARCH"] == "arm":
+-if CONFIG["TARGET_CPU"] == "arm":
 -
 -    CXXFLAGS += [
 -        "-mfpu=neon"
@@ -53,7 +53,7 @@ index 8c56b6b8e5..eaf8d7087a 100644
 -        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
 -    ]
 -
--if CONFIG["CPU_ARCH"] == "mips32":
+-if CONFIG["TARGET_CPU"] == "mips32":
 -
 -    DEFINES["MIPS32_LE"] = True
 -    DEFINES["MIPS_FPU_LE"] = True
@@ -84,7 +84,7 @@ index 8c56b6b8e5..eaf8d7087a 100644
 -        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
 -    ]
 -
--if CONFIG["CPU_ARCH"] == "mips64":
+-if CONFIG["TARGET_CPU"] == "mips64":
 -
 -    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
 -    DEFINES["_GNU_SOURCE"] = True
@@ -113,14 +113,14 @@ index 8c56b6b8e5..eaf8d7087a 100644
 -        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
 -    ]
 -
- if CONFIG["CPU_ARCH"] == "ppc64":
+ if CONFIG["TARGET_CPU"] == "ppc64":
  
      DEFINES["USE_X11"] = "1"
-@@ -410,97 +314,6 @@ if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
+@@ -389,35 +293,6 @@ if CONFIG["MOZ_DEBUG"] == "1" and CONFIG
  
      DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
  
--if CONFIG["CPU_ARCH"] == "aarch64" and CONFIG["OS_TARGET"] == "Linux":
+-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
 -
 -    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
 -    DEFINES["_GNU_SOURCE"] = True
@@ -149,7 +149,14 @@ index 8c56b6b8e5..eaf8d7087a 100644
 -        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
 -    ]
 -
--if CONFIG["CPU_ARCH"] == "x86" and CONFIG["OS_TARGET"] == "Linux":
+ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "riscv64":
+ 
+     DEFINES["USE_X11"] = "1"
+@@ -446,95 +321,6 @@ if CONFIG["OS_TARGET"] == "Linux" and CO
+         "/third_party/libwebrtc/modules/desktop_capture/linux/x11/x_window_property.cc"
+     ]
+ 
+-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
 -
 -    CXXFLAGS += [
 -        "-msse2"
@@ -182,7 +189,7 @@ index 8c56b6b8e5..eaf8d7087a 100644
 -        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
 -    ]
 -
--if CONFIG["CPU_ARCH"] == "x86_64" and CONFIG["OS_TARGET"] == "Linux":
+-if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 -
 -    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
 -    DEFINES["_GNU_SOURCE"] = True
@@ -211,14 +218,40 @@ index 8c56b6b8e5..eaf8d7087a 100644
 -        "/third_party/libwebrtc/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc"
 -    ]
 -
- if CONFIG["CPU_ARCH"] == "aarch64" and CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux":
+-if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
+-
+-    DEFINES["USE_X11"] = "1"
+-    DEFINES["WEBRTC_USE_X11"] = True
+-
+-    OS_LIBS += [
+-        "X11",
+-        "Xcomposite",
+-        "Xdamage",
+-        "Xext",
+-        "Xfixes",
+-        "Xrandr",
+-        "Xrender"
+-    ]
+-
+-    UNIFIED_SOURCES += [
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/screen_capturer_x11.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/shared_x_display.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/window_capturer_x11.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/window_finder_x11.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/window_list_utils.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/x_atom_cache.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/x_error_trap.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/x_server_pixel_buffer.cc",
+-        "/third_party/libwebrtc/modules/desktop_capture/linux/x11/x_window_property.cc"
+-    ]
  
-     DEFINES["USE_X11"] = "1"
-diff --git a/third_party/libwebrtc/modules/portal/portal_gn/moz.build b/third_party/libwebrtc/modules/portal/portal_gn/moz.build
-index 77603c780b..e6f2c9e724 100644
---- a/third_party/libwebrtc/modules/portal/portal_gn/moz.build
-+++ b/third_party/libwebrtc/modules/portal/portal_gn/moz.build
-@@ -26,7 +26,7 @@ DEFINES["WEBRTC_MOZILLA_BUILD"] = True
+ if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
+ 
+diff -up firefox-128.0/third_party/libwebrtc/modules/portal/portal_gn/moz.build.disable-pipewire firefox-128.0/third_party/libwebrtc/modules/portal/portal_gn/moz.build
+--- firefox-128.0/third_party/libwebrtc/modules/portal/portal_gn/moz.build.disable-pipewire	2024-07-04 18:20:41.000000000 +0200
++++ firefox-128.0/third_party/libwebrtc/modules/portal/portal_gn/moz.build	2024-07-17 14:01:36.291603109 +0200
+@@ -27,7 +27,7 @@ DEFINES["WEBRTC_MOZILLA_BUILD"] = True
  DEFINES["WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS"] = "0"
  DEFINES["WEBRTC_POSIX"] = True
  DEFINES["WEBRTC_STRICT_FIELD_TRIALS"] = "0"
@@ -227,11 +260,10 @@ index 77603c780b..e6f2c9e724 100644
  DEFINES["_FILE_OFFSET_BITS"] = "64"
  DEFINES["_GNU_SOURCE"] = True
  DEFINES["_LARGEFILE64_SOURCE"] = True
-diff --git a/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build b/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build
-index 86a0daf8fa..e895f2eb15 100644
---- a/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build
-+++ b/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build
-@@ -24,7 +24,7 @@ DEFINES["WEBRTC_MOZILLA_BUILD"] = True
+diff -up firefox-128.0/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build.disable-pipewire firefox-128.0/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build
+--- firefox-128.0/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build.disable-pipewire	2024-07-04 18:20:41.000000000 +0200
++++ firefox-128.0/third_party/libwebrtc/third_party/pipewire/pipewire_gn/moz.build	2024-07-17 14:01:36.291603109 +0200
+@@ -25,7 +25,7 @@ DEFINES["WEBRTC_MOZILLA_BUILD"] = True
  DEFINES["WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS"] = "0"
  DEFINES["WEBRTC_POSIX"] = True
  DEFINES["WEBRTC_STRICT_FIELD_TRIALS"] = "0"
