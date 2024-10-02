@@ -137,7 +137,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.2.0
+Version:              128.3.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -168,7 +168,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20240827.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20240924.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -193,8 +193,8 @@ Source37:             mochitest-python.tar.gz
 # Bundled libraries
 Source401:            nss-setup-flags-env.inc
 Source402:            nspr-4.35.0-1.el8_1.src.rpm
-Source403:            nss-3.101.0-6.el8_2.src.rpm
-Source404:            nss-3.101.0-6.el9_0.src.rpm
+Source403:            nss-3.101.0-7.el9_2.src.rpm
+Source404:            nss-3.101.0-7.el9_2.src.rpm
 
 # ---- RHEL specific patches ---
 # -- Downstream only --
@@ -1860,9 +1860,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Sep 16 2024 Release Engineering <releng@openela.org> - 128.2.0
+* Wed Oct 02 2024 Release Engineering <releng@openela.org> - 128.3.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Sep 24 2024 Jan Horak <jhorak@redhat.com> - 128.3.0-1
+- Update to 128.3.0
 
 * Tue Aug 27 2024 Jan Horak <jhorak@redhat.com> - 128.2.0-1
 - Update to 128.2.0
