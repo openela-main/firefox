@@ -1,6 +1,6 @@
-SOURCES/firefox-langpacks-128.3.0esr-20240924.tar.xz
 SOURCES/mochitest-python.tar.gz
 SOURCES/nss-3.101.0-7.el8_2.src.rpm
 SOURCES/nss-3.101.0-7.el9_2.src.rpm
 SOURCES/cbindgen-vendor.tar.xz
-SOURCES/firefox-128.3.0esr.processed-source.tar.xz
+SOURCES/firefox-128.3.1esr.processed-source.tar.xz
+SOURCES/firefox-langpacks-128.3.1esr-20241009.tar.xz
