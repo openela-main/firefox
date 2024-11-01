@@ -137,8 +137,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.3.1
-Release:              2%{?dist}
+Version:              128.4.0
+Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -168,7 +168,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20241009.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20241022.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -179,7 +179,7 @@ Source21:             firefox.sh.in
 Source23:             firefox.1
 Source24:             mozilla-api-key
 Source25:             firefox-symbolic.svg
-Source26:             distribution.ini
+Source26:             distribution.ini.in
 Source27:             google-api-key
 Source30:             firefox-x11.sh.in
 Source31:             firefox-x11.desktop
@@ -235,6 +235,12 @@ Patch152:             rhbz-1173156.patch
 Patch154:             firefox-nss-addon-hack.patch
 # ARM run-time patch
 Patch155:             rhbz-1354671.patch
+
+# --- fips webrtc fix
+Patch200:             webrtc-128.0.patch.patch
+Patch201:             D224587.1728128070.diff
+Patch202:             D224588.1728128098.diff
+
 
 # ---- Test patches ----
 # Generate without context by
@@ -1170,6 +1176,14 @@ echo "--------------------------------------------"
 %patch -P155 -p1 -b .rhbz-1354671
 %endif
 
+# Fips webrtc patch
+%ifnarch ppc64 ppc64le s390x
+%patch -P200 -p1 -b .webrtc-128.0
+%patch -P201 -p1 -b .D224587
+%patch -P202 -p1 -b .D224588
+%endif
+
+
 # ---- Security patches ----
 
 %{__rm} -f .mozconfig
@@ -1718,14 +1732,11 @@ ln -s %{_datadir}/myspell %{buildroot}%{mozappdir}/dictionaries
 
 # Add distribution.ini
 %{__mkdir_p} %{buildroot}%{mozappdir}/distribution
-%{__cp} %{SOURCE26} %{buildroot}%{mozappdir}/distribution
-
-# OpenELA
-%if 0%{?openela}
-%{__sed} -ie 's/redhat/openela/g' %{buildroot}%{mozappdir}/distribution
-(source  /etc/os-release; %{__sed} -ie 's/Red Hat Enterprise Linux/$NAME/' %{buildroot}%{mozappdir}/distribution)
-cat %{buildroot}%{mozappdir}/distribution
-%endif
+%{__sed} -e "s/__NAME__/%(source /etc/os-release; echo ${NAME})/g" \
+         -e "s/__ID__/%(source /etc/os-release; echo ${ID})/g" \
+         -e "s/rhel/redhat/g" \
+         -e "s/Fedora.*/Fedora/g" \
+         %{SOURCE26} > %{buildroot}%{mozappdir}/distribution/distribution.ini
 
 # Install appdata file
 mkdir -p %{buildroot}%{_datadir}/metainfo
@@ -1860,9 +1871,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Oct 10 2024 Release Engineering <releng@openela.org> - 128.3.1
+* Fri Nov 01 2024 Release Engineering <releng@openela.org> - 128.4.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Oct 22 2024 Eike Rathke <erack@redhat.com> - 128.4.0-1
+- Update to 128.4.0 build1
 
 * Wed Oct 09 2024 Jan Horak <jhorak@redhat.com> - 128.3.1-1
 - Update to 128.3.1
