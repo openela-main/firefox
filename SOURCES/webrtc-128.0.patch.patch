@@ -1,0 +1,2369 @@
+diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.cpp.webrtc firefox-128.2.0/dom/crypto/WebCryptoTask.cpp
+--- firefox-128.2.0/dom/crypto/WebCryptoTask.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/crypto/WebCryptoTask.cpp	2024-09-30 21:42:30.750124316 +0200
+@@ -118,60 +118,6 @@ enum TelemetryAlgorithm {
+     }                                                \
+   }
+ 
+-class ClearException {
+- public:
+-  explicit ClearException(JSContext* aCx) : mCx(aCx) {}
+-
+-  ~ClearException() { JS_ClearPendingException(mCx); }
+-
+- private:
+-  JSContext* mCx;
+-};
+-
+-template <class OOS>
+-static nsresult GetAlgorithmName(JSContext* aCx, const OOS& aAlgorithm,
+-                                 nsString& aName) {
+-  ClearException ce(aCx);
+-
+-  if (aAlgorithm.IsString()) {
+-    // If string, then treat as algorithm name
+-    aName.Assign(aAlgorithm.GetAsString());
+-  } else {
+-    // Coerce to algorithm and extract name
+-    JS::Rooted<JS::Value> value(aCx,
+-                                JS::ObjectValue(*aAlgorithm.GetAsObject()));
+-    Algorithm alg;
+-
+-    if (!alg.Init(aCx, value)) {
+-      return NS_ERROR_DOM_SYNTAX_ERR;
+-    }
+-
+-    aName = alg.mName;
+-  }
+-
+-  if (!NormalizeToken(aName, aName)) {
+-    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+-  }
+-
+-  return NS_OK;
+-}
+-
+-template <class T, class OOS>
+-static nsresult Coerce(JSContext* aCx, T& aTarget, const OOS& aAlgorithm) {
+-  ClearException ce(aCx);
+-
+-  if (!aAlgorithm.IsObject()) {
+-    return NS_ERROR_DOM_SYNTAX_ERR;
+-  }
+-
+-  JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*aAlgorithm.GetAsObject()));
+-  if (!aTarget.Init(aCx, value)) {
+-    return NS_ERROR_DOM_TYPE_MISMATCH_ERR;
+-  }
+-
+-  return NS_OK;
+-}
+-
+ inline size_t MapHashAlgorithmNameToBlockSize(const nsString& aName) {
+   if (aName.EqualsLiteral(WEBCRYPTO_ALG_SHA1) ||
+       aName.EqualsLiteral(WEBCRYPTO_ALG_SHA256)) {
+@@ -2198,6 +2144,30 @@ class GenerateSymmetricKeyTask : public
+   virtual void Cleanup() override { mKey = nullptr; }
+ };
+ 
++class GenerateAsymmetricKeyTask : public WebCryptoTask {
++ public:
++  GenerateAsymmetricKeyTask(nsIGlobalObject* aGlobal, JSContext* aCx,
++                            const ObjectOrString& aAlgorithm, bool aExtractable,
++                            const Sequence<nsString>& aKeyUsages);
++
++ protected:
++  UniquePLArenaPool mArena;
++  UniquePtr<CryptoKeyPair> mKeyPair;
++  nsString mAlgName;
++  CK_MECHANISM_TYPE mMechanism;
++  PK11RSAGenParams mRsaParams;
++  SECKEYDHParams mDhParams;
++  nsString mNamedCurve;
++
++  virtual nsresult DoCrypto() override;
++  virtual void Resolve() override;
++  virtual void Cleanup() override;
++
++ private:
++  UniqueSECKEYPublicKey mPublicKey;
++  UniqueSECKEYPrivateKey mPrivateKey;
++};
++
+ GenerateAsymmetricKeyTask::GenerateAsymmetricKeyTask(
+     nsIGlobalObject* aGlobal, JSContext* aCx, const ObjectOrString& aAlgorithm,
+     bool aExtractable, const Sequence<nsString>& aKeyUsages)
+diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.h.webrtc firefox-128.2.0/dom/crypto/WebCryptoTask.h
+--- firefox-128.2.0/dom/crypto/WebCryptoTask.h.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/crypto/WebCryptoTask.h	2024-09-30 21:41:07.648369048 +0200
+@@ -175,31 +175,60 @@ class WebCryptoTask : public CancelableR
+   nsresult mRv;
+ };
+ 
+-// XXX This class is declared here (unlike others) to enable reuse by WebRTC.
+-class GenerateAsymmetricKeyTask : public WebCryptoTask {
++class ClearException {
+  public:
+-  GenerateAsymmetricKeyTask(nsIGlobalObject* aGlobal, JSContext* aCx,
+-                            const ObjectOrString& aAlgorithm, bool aExtractable,
+-                            const Sequence<nsString>& aKeyUsages);
+-
+- protected:
+-  UniquePLArenaPool mArena;
+-  UniquePtr<CryptoKeyPair> mKeyPair;
+-  nsString mAlgName;
+-  CK_MECHANISM_TYPE mMechanism;
+-  PK11RSAGenParams mRsaParams;
+-  SECKEYDHParams mDhParams;
+-  nsString mNamedCurve;
+-
+-  virtual nsresult DoCrypto() override;
+-  virtual void Resolve() override;
+-  virtual void Cleanup() override;
++  explicit ClearException(JSContext* aCx) : mCx(aCx) {}
++
++  ~ClearException() { JS_ClearPendingException(mCx); }
+ 
+  private:
+-  UniqueSECKEYPublicKey mPublicKey;
+-  UniqueSECKEYPrivateKey mPrivateKey;
++  JSContext* mCx;
+ };
+ 
++template <class OOS>
++nsresult GetAlgorithmName(JSContext* aCx, const OOS& aAlgorithm,
++                          nsString& aName) {
++  ClearException ce(aCx);
++
++  if (aAlgorithm.IsString()) {
++    // If string, then treat as algorithm name
++    aName.Assign(aAlgorithm.GetAsString());
++  } else {
++    // Coerce to algorithm and extract name
++    JS::Rooted<JS::Value> value(aCx,
++                                JS::ObjectValue(*aAlgorithm.GetAsObject()));
++    Algorithm alg;
++
++    if (!alg.Init(aCx, value)) {
++      return NS_ERROR_DOM_SYNTAX_ERR;
++    }
++
++    aName = alg.mName;
++  }
++
++  if (!NormalizeToken(aName, aName)) {
++    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
++  }
++
++  return NS_OK;
++}
++
++template <class T, class OOS>
++nsresult Coerce(JSContext* aCx, T& aTarget, const OOS& aAlgorithm) {
++  ClearException ce(aCx);
++
++  if (!aAlgorithm.IsObject()) {
++    return NS_ERROR_DOM_SYNTAX_ERR;
++  }
++
++  JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*aAlgorithm.GetAsObject()));
++  if (!aTarget.Init(aCx, value)) {
++    return NS_ERROR_DOM_TYPE_MISMATCH_ERR;
++  }
++
++  return NS_OK;
++}
++
+ }  // namespace mozilla::dom
+ 
+ #endif  // mozilla_dom_WebCryptoTask_h
+diff -up firefox-128.2.0/dom/media/webrtc/components.conf.webrtc firefox-128.2.0/dom/media/webrtc/components.conf
+--- firefox-128.2.0/dom/media/webrtc/components.conf.webrtc	2024-09-30 21:41:07.649369081 +0200
++++ firefox-128.2.0/dom/media/webrtc/components.conf	2024-09-30 21:41:07.649369081 +0200
+@@ -0,0 +1,14 @@
++# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
++# vim: set filetype=python:
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++Classes = [
++    {
++        'cid': '{e665acb0-5952-11ef-bb8c-18c04d07c34d}',
++        'contract_ids': ['@mozilla.org/rtccert/service;1'],
++        'headers': ['/dom/media/webrtc/RTCCertService.h'],
++        'constructor': 'mozilla::dom::NewRTCCertService',
++    },
++]
+diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp
+--- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp	2024-09-30 21:41:07.649369081 +0200
+@@ -104,13 +104,15 @@ class MediaTransportHandlerSTS : public
+                          // via IPC anymore
+                          const nsTArray<NrIceStunAddr>& aStunAddrs) override;
+ 
+-  void ActivateTransport(
+-      const std::string& aTransportId, const std::string& aLocalUfrag,
+-      const std::string& aLocalPwd, size_t aComponentCount,
+-      const std::string& aUfrag, const std::string& aPassword,
+-      const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+-      SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
+-      bool aPrivacyRequested) override;
++  void ActivateTransport(const std::string& aTransportId,
++                         const std::string& aLocalUfrag,
++                         const std::string& aLocalPwd, size_t aComponentCount,
++                         const std::string& aUfrag,
++                         const std::string& aPassword,
++                         const nsTArray<uint8_t>& aCertFingerprint,
++                         SSLKEAType aAuthType, bool aDtlsClient,
++                         const DtlsDigestList& aDigests,
++                         bool aPrivacyRequested) override;
+ 
+   void RemoveTransportsExcept(
+       const std::set<std::string>& aTransportIds) override;
+@@ -799,14 +801,13 @@ void MediaTransportHandlerSTS::ActivateT
+     const std::string& aTransportId, const std::string& aLocalUfrag,
+     const std::string& aLocalPwd, size_t aComponentCount,
+     const std::string& aUfrag, const std::string& aPassword,
+-    const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+-    SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
+-    bool aPrivacyRequested) {
++    const nsTArray<uint8_t>& aCertFingerprint, SSLKEAType aAuthType,
++    bool aDtlsClient, const DtlsDigestList& aDigests, bool aPrivacyRequested) {
+   MOZ_RELEASE_ASSERT(mInitPromise);
+ 
+   mInitPromise->Then(
+       mStsThread, __func__,
+-      [=, keyDer = aKeyDer.Clone(), certDer = aCertDer.Clone(),
++      [=, aCertFingerprint = aCertFingerprint.Clone(),
+        self = RefPtr<MediaTransportHandlerSTS>(this)]() {
+         if (!mIceCtx) {
+           return;  // Probably due to XPCOM shutdown
+@@ -814,7 +815,7 @@ void MediaTransportHandlerSTS::ActivateT
+ 
+         MOZ_ASSERT(aComponentCount);
+         RefPtr<DtlsIdentity> dtlsIdentity(
+-            DtlsIdentity::Deserialize(keyDer, certDer, aAuthType));
++            DtlsIdentity::Deserialize(aCertFingerprint, aAuthType));
+         if (!dtlsIdentity) {
+           MOZ_ASSERT(false);
+           return;
+diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h
+--- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h	2024-09-30 21:41:07.650369114 +0200
+@@ -98,8 +98,8 @@ class MediaTransportHandler {
+       const std::string& aTransportId, const std::string& aLocalUfrag,
+       const std::string& aLocalPwd, size_t aComponentCount,
+       const std::string& aUfrag, const std::string& aPassword,
+-      const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+-      SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
++      const nsTArray<uint8_t>& aCertFingerprint, SSLKEAType aAuthType,
++      bool aDtlsClient, const DtlsDigestList& aDigests,
+       bool aPrivacyRequested) = 0;
+ 
+   virtual void RemoveTransportsExcept(
+diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp
+--- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp	2024-09-30 21:41:07.650369114 +0200
+@@ -269,17 +269,16 @@ void MediaTransportHandlerIPC::ActivateT
+     const std::string& aTransportId, const std::string& aLocalUfrag,
+     const std::string& aLocalPwd, size_t aComponentCount,
+     const std::string& aUfrag, const std::string& aPassword,
+-    const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+-    SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
+-    bool aPrivacyRequested) {
++    const nsTArray<uint8_t>& aCertFingerprint, SSLKEAType aAuthType,
++    bool aDtlsClient, const DtlsDigestList& aDigests, bool aPrivacyRequested) {
+   mInitPromise->Then(
+       mCallbackThread, __func__,
+-      [=, keyDer = aKeyDer.Clone(), certDer = aCertDer.Clone(),
++      [=, certFingerprint = aCertFingerprint.Clone(),
+        self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+         if (mChild) {
+           mChild->SendActivateTransport(aTransportId, aLocalUfrag, aLocalPwd,
+                                         aComponentCount, aUfrag, aPassword,
+-                                        keyDer, certDer, aAuthType, aDtlsClient,
++                                        certFingerprint, aAuthType, aDtlsClient,
+                                         aDigests, aPrivacyRequested);
+         }
+       },
+diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h
+--- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h	2024-09-30 21:41:07.650369114 +0200
+@@ -49,13 +49,15 @@ class MediaTransportHandlerIPC final : p
+                          // this up internally
+                          const nsTArray<NrIceStunAddr>& aStunAddrs) override;
+ 
+-  void ActivateTransport(
+-      const std::string& aTransportId, const std::string& aLocalUfrag,
+-      const std::string& aLocalPwd, size_t aComponentCount,
+-      const std::string& aUfrag, const std::string& aPassword,
+-      const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+-      SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
+-      bool aPrivacyRequested) override;
++  void ActivateTransport(const std::string& aTransportId,
++                         const std::string& aLocalUfrag,
++                         const std::string& aLocalPwd, size_t aComponentCount,
++                         const std::string& aUfrag,
++                         const std::string& aPassword,
++                         const nsTArray<uint8_t>& aCertFingerprint,
++                         SSLKEAType aAuthType, bool aDtlsClient,
++                         const DtlsDigestList& aDigests,
++                         bool aPrivacyRequested) override;
+ 
+   void RemoveTransportsExcept(
+       const std::set<std::string>& aTransportIds) override;
+diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp
+--- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp	2024-09-30 21:41:07.650369114 +0200
+@@ -174,12 +174,12 @@ mozilla::ipc::IPCResult MediaTransportPa
+ mozilla::ipc::IPCResult MediaTransportParent::RecvActivateTransport(
+     const string& transportId, const string& localUfrag, const string& localPwd,
+     const int& componentCount, const string& remoteUfrag,
+-    const string& remotePwd, nsTArray<uint8_t>&& keyDer,
+-    nsTArray<uint8_t>&& certDer, const int& authType, const bool& dtlsClient,
+-    const DtlsDigestList& digests, const bool& privacyRequested) {
++    const string& remotePwd, nsTArray<uint8_t>&& certFingerprint,
++    const int& authType, const bool& dtlsClient, const DtlsDigestList& digests,
++    const bool& privacyRequested) {
+   mImpl->mHandler->ActivateTransport(
+       transportId, localUfrag, localPwd, componentCount, remoteUfrag, remotePwd,
+-      keyDer, certDer, static_cast<SSLKEAType>(authType), dtlsClient, digests,
++      certFingerprint, static_cast<SSLKEAType>(authType), dtlsClient, digests,
+       privacyRequested);
+   return ipc::IPCResult::Ok();
+ }
+diff -up firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
+--- firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.webrtc	2024-08-26 16:23:35.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp	2024-09-30 21:41:07.650369114 +0200
+@@ -4353,9 +4353,8 @@ void PeerConnectionImpl::UpdateTransport
+         candidates.end());
+   }
+ 
+-  nsTArray<uint8_t> keyDer;
+-  nsTArray<uint8_t> certDer;
+-  nsresult rv = Identity()->Serialize(&keyDer, &certDer);
++  nsTArray<uint8_t> certFingerprint;
++  nsresult rv = Identity()->Serialize(certFingerprint);
+   if (NS_FAILED(rv)) {
+     CSFLogError(LOGTAG, "%s: Failed to serialize DTLS identity: %d",
+                 __FUNCTION__, (int)rv);
+@@ -4371,7 +4370,7 @@ void PeerConnectionImpl::UpdateTransport
+ 
+   mTransportHandler->ActivateTransport(
+       transport.mTransportId, transport.mLocalUfrag, transport.mLocalPwd,
+-      components, ufrag, pwd, keyDer, certDer, Identity()->auth_type(),
++      components, ufrag, pwd, certFingerprint, Identity()->auth_type(),
+       transport.mDtls->GetRole() == JsepDtlsTransport::kJsepDtlsClient, digests,
+       PrivacyRequested());
+ 
+diff -up firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h.webrtc firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h
+--- firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h	2024-09-30 21:41:07.648369048 +0200
+@@ -40,9 +40,9 @@ class MediaTransportParent : public dom:
+       const string& transportId, const string& localUfrag,
+       const string& localPwd, const int& componentCount,
+       const string& remoteUfrag, const string& remotePwd,
+-      nsTArray<uint8_t>&& keyDer, nsTArray<uint8_t>&& certDer,
+-      const int& authType, const bool& dtlsClient,
+-      const DtlsDigestList& digests, const bool& privacyRequested);
++      nsTArray<uint8_t>&& certFingerprint, const int& authType,
++      const bool& dtlsClient, const DtlsDigestList& digests,
++      const bool& privacyRequested);
+   mozilla::ipc::IPCResult RecvRemoveTransportsExcept(
+       const StringVector& transportIds);
+   mozilla::ipc::IPCResult RecvStartIceChecks(const bool& isControlling,
+diff -up firefox-128.2.0/dom/media/webrtc/moz.build.webrtc firefox-128.2.0/dom/media/webrtc/moz.build
+--- firefox-128.2.0/dom/media/webrtc/moz.build.webrtc	2024-08-26 16:23:34.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/moz.build	2024-09-30 21:41:07.650369114 +0200
+@@ -41,6 +41,18 @@ SOURCES += [
+     "CubebDeviceEnumerator.cpp",
+ ]
+ 
++XPCOM_MANIFESTS += [
++    "components.conf",
++]
++
++IPDL_SOURCES += ["PRTCCertServiceTransaction.ipdl"]
++
++XPIDL_SOURCES += [
++    "nsIRTCCertService.idl",
++]
++
++XPIDL_MODULE = "rtc_certservice"
++
+ if CONFIG["MOZ_WEBRTC"]:
+     EXPORTS += [
+         "MediaEngineRemoteVideoSource.h",
+@@ -51,7 +63,11 @@ if CONFIG["MOZ_WEBRTC"]:
+     UNIFIED_SOURCES += [
+         "MediaEngineRemoteVideoSource.cpp",
+         "MediaEngineWebRTCAudio.cpp",
++        "RTCCertCache.cpp",
+         "RTCCertificate.cpp",
++        "RTCCertService.cpp",
++        "RTCCertServiceData.cpp",
++        "RTCCertServiceParent.cpp",
+         "RTCIdentityProviderRegistrar.cpp",
+     ]
+     # MediaEngineWebRTC.cpp needs to be built separately.
+@@ -113,7 +129,11 @@ EXPORTS.mozilla += [
+     "PeerIdentity.h",
+ ]
+ EXPORTS.mozilla.dom += [
++    "RTCCertCache.h",
+     "RTCCertificate.h",
++    "RTCCertService.h",
++    "RTCCertServiceData.h",
++    "RTCCertServiceParent.h",
+ ]
+ 
+ include("/ipc/chromium/chromium-config.mozbuild")
+diff -up firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl.webrtc firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl
+--- firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl.webrtc	2024-09-30 21:41:07.651369147 +0200
++++ firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl	2024-09-30 21:41:07.650369114 +0200
+@@ -0,0 +1,34 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "nsISupports.idl"
++
++%{C++
++#include "mozilla/dom/RTCCertServiceData.h"
++%}
++
++native CertFingerprint(mozilla::dom::CertFingerprint);
++native RTCCertFingerprintPromise(RefPtr<mozilla::dom::RTCCertFingerprintPromise>);
++
++native CertData(mozilla::dom::CertData);
++native RTCCertificatePromise(RefPtr<mozilla::dom::RTCCertificatePromise>);
++
++[ptr] native CERTCertificate(CERTCertificate);
++
++[uuid(e665acb0-5952-11ef-bb8c-18c04d07c34d)]
++interface nsIRTCCertService : nsISupports
++{
++    // Init the class
++    [notxpcom, nostdcall] void Initialize();
++
++    // Generate cert
++    [notxpcom, nostdcall] RTCCertFingerprintPromise GenerateCertificate(in Array<uint8_t> aParam, in PRTime aExpires, in unsigned long aMechanism, in uint32_t aSignatureAlg);
++
++    // Remove cert
++    [notxpcom, nostdcall] void RemoveCertificate([const] in CertFingerprint aCertFingerprint);
++
++    // Get cert
++    [notxpcom, nostdcall] RTCCertificatePromise getCertificate([const] in CertFingerprint aCertFingerprint);
++};
+diff -up firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl.webrtc firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl
+--- firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl.webrtc	2024-08-26 16:23:35.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl	2024-09-30 21:41:07.648369048 +0200
+@@ -62,8 +62,7 @@ parent:
+                           int componentCount,
+                           string remoteUfrag,
+                           string remotePwd,
+-                          uint8_t[] keyDer,
+-                          uint8_t[] certDer,
++                          uint8_t[] certFingerprint,
+                           int authType,
+                           bool dtlsClient,
+                           DtlsDigestList digests,
+diff -up firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.webrtc firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl
+--- firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.webrtc	2024-09-30 21:41:07.648369048 +0200
++++ firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl	2024-09-30 21:41:07.648369048 +0200
+@@ -0,0 +1,33 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
++ * You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++/*
++ * IPC Transaction protocol for the Cert Service DOM API.
++ * This IPC protocol allows to generate private / public keys and certificate
++ * in socket process and return public key and certificate back to
++ * content process.
++ */
++
++include protocol PBackground;
++
++using PRTime from "prtime.h";
++using mozilla::dom::CertFingerprint from "mozilla/dom/RTCCertServiceData.h";
++using mozilla::dom::CertDataIPC from "mozilla/dom/RTCCertServiceData.h";
++
++namespace mozilla {
++namespace dom {
++
++[ParentProc=Socket, ChildProc=Content, ChildImpl=virtual, ParentImpl=virtual]
++async protocol PRTCCertServiceTransaction {
++  parent:
++    async GenerateCertificate(uint8_t[] aParam, PRTime aExpires, uint32_t aMechanism, uint32_t aSignatureAlg) returns (CertFingerprint fingerprint);
++    async RemoveCertificate(CertFingerprint aCertFingerprint);
++    async GetCertificate(CertFingerprint aCertFingerprint) returns (CertDataIPC certificate);
++
++  child:
++    async __delete__();
++};
++
++}
++}
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp
+--- firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp.webrtc	2024-09-30 21:41:07.648369048 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp	2024-09-30 21:41:07.648369048 +0200
+@@ -0,0 +1,48 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "RTCCertCache.h"
++
++namespace mozilla::dom {
++
++nsTArray<UniquePtr<GeneratedCertificate>> RTCCertCache::sCertCache;
++mozilla::StaticMutex RTCCertCache::sRTCCertCacheLock MOZ_UNANNOTATED;
++
++void RTCCertCache::CacheCert(UniquePtr<GeneratedCertificate> aCert) {
++  StaticMutexAutoLock CacheLock(sRTCCertCacheLock);
++  for (size_t i = 0; i < sCertCache.Length(); i++) {
++    if (!sCertCache[i]) {
++      sCertCache[i] = std::move(aCert);
++      return;
++    }
++  }
++  sCertCache.AppendElement(std::move(aCert));
++}
++
++GeneratedCertificate* RTCCertCache::LookupCert(
++    const CertFingerprint aCertFingerprint) {
++  StaticMutexAutoLock CacheLock(sRTCCertCacheLock);
++  for (size_t i = 0; i < sCertCache.Length(); i++) {
++    if (sCertCache[i] &&
++        sCertCache[i]->mCertFingerprint.Match(&aCertFingerprint)) {
++      return sCertCache[i].get();
++    }
++  }
++  return nullptr;
++}
++
++void RTCCertCache::RemoveCert(const CertFingerprint aCertFingerprint) {
++  StaticMutexAutoLock CacheLock(sRTCCertCacheLock);
++  for (size_t i = 0; i < sCertCache.Length(); i++) {
++    if (sCertCache[i] &&
++        sCertCache[i]->mCertFingerprint.Match(&aCertFingerprint)) {
++      sCertCache[i] = nullptr;
++      break;
++    }
++  }
++}
++
++}  // namespace mozilla::dom
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertCache.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertCache.h
+--- firefox-128.2.0/dom/media/webrtc/RTCCertCache.h.webrtc	2024-09-30 21:41:07.648369048 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertCache.h	2024-09-30 21:41:07.648369048 +0200
+@@ -0,0 +1,36 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef mozilla_dom_CertCache_h
++#define mozilla_dom_CertCache_h
++
++#include "mozilla/dom/RTCCertServiceData.h"
++#include "mozilla/StaticMutex.h"
++
++namespace mozilla::dom {
++
++struct GeneratedCertificate {
++  UniqueSECKEYPublicKey mPublicKey;
++  UniqueSECKEYPrivateKey mPrivateKey;
++  UniqueCERTCertificate mCertificate;
++  CertFingerprint mCertFingerprint;
++  PRTime mExpires = 0;
++};
++
++class RTCCertCache {
++ public:
++  static void CacheCert(UniquePtr<GeneratedCertificate> aCert);
++  static GeneratedCertificate* LookupCert(
++      const CertFingerprint aCertFingerprint);
++  static void RemoveCert(const CertFingerprint aCertFingerprint);
++
++ private:
++  static nsTArray<UniquePtr<GeneratedCertificate>> sCertCache;
++  static mozilla::StaticMutex sRTCCertCacheLock MOZ_UNANNOTATED;
++};
++}  // namespace mozilla::dom
++
++#endif  // mozilla_dom_CertCache_h
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp
+--- firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc	2024-08-26 16:23:35.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp	2024-09-30 21:41:07.649369081 +0200
+@@ -25,13 +25,12 @@
+ #include "mozilla/UniquePtr.h"
+ #include "mozilla/dom/BindingDeclarations.h"
+ #include "mozilla/dom/CryptoBuffer.h"
+-#include "mozilla/dom/CryptoKey.h"
+ #include "mozilla/dom/KeyAlgorithmBinding.h"
+ #include "mozilla/dom/KeyAlgorithmProxy.h"
+ #include "mozilla/dom/Promise.h"
+ #include "mozilla/dom/RTCCertificateBinding.h"
++#include "mozilla/dom/RootedDictionary.h"
+ #include "mozilla/dom/StructuredCloneHolder.h"
+-#include "mozilla/dom/SubtleCryptoBinding.h"
+ #include "mozilla/dom/UnionTypes.h"
+ #include "mozilla/dom/WebCryptoCommon.h"
+ #include "mozilla/dom/WebCryptoTask.h"
+@@ -42,6 +41,7 @@
+ #include "nsStringFlags.h"
+ #include "nsStringFwd.h"
+ #include "nsTLiteralString.h"
++#include "nsServiceManagerUtils.h"
+ #include "pk11pub.h"
+ #include "plarena.h"
+ #include "secasn1.h"
+@@ -71,271 +71,203 @@ NS_INTERFACE_MAP_END
+   PRTime(PR_USEC_PER_SEC) * PRTime(60)  /*sec*/ \
+       * PRTime(60) /*min*/ * PRTime(24) /*hours*/
+ #define EXPIRATION_DEFAULT ONE_DAY* PRTime(30)
+-#define EXPIRATION_SLACK ONE_DAY
+ #define EXPIRATION_MAX ONE_DAY* PRTime(365) /*year*/
+ 
+-const size_t RTCCertificateCommonNameLength = 16;
+ const size_t RTCCertificateMinRsaSize = 1024;
+ 
+-class GenerateRTCCertificateTask : public GenerateAsymmetricKeyTask {
+- public:
+-  GenerateRTCCertificateTask(nsIGlobalObject* aGlobal, JSContext* aCx,
+-                             const ObjectOrString& aAlgorithm,
+-                             const Sequence<nsString>& aKeyUsages,
+-                             PRTime aExpires)
+-      : GenerateAsymmetricKeyTask(aGlobal, aCx, aAlgorithm, true, aKeyUsages),
+-        mExpires(aExpires),
+-        mAuthType(ssl_kea_null),
+-        mCertificate(nullptr),
+-        mSignatureAlg(SEC_OID_UNKNOWN) {
+-    if (NS_FAILED(mEarlyRv)) {
+-      // webrtc-pc says to throw NotSupportedError if we have passed "an
+-      // algorithm that the user agent cannot or will not use to generate a
+-      // certificate". This catches these cases.
+-      mEarlyRv = NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+-    }
++static PRTime ReadExpires(JSContext* aCx, const ObjectOrString& aOptions,
++                          ErrorResult& aRv) {
++  // This conversion might fail, but we don't really care; use the default.
++  // If this isn't an object, or it doesn't coerce into the right type,
++  // then we won't get the |expires| value.  Either will be caught later.
++  RTCCertificateExpiration expiration;
++  if (!aOptions.IsObject()) {
++    return EXPIRATION_DEFAULT;
+   }
+-
+- private:
+-  PRTime mExpires;
+-  SSLKEAType mAuthType;
+-  UniqueCERTCertificate mCertificate;
+-  SECOidTag mSignatureAlg;
+-
+-  static CERTName* GenerateRandomName(PK11SlotInfo* aSlot) {
+-    uint8_t randomName[RTCCertificateCommonNameLength];
+-    SECStatus rv =
+-        PK11_GenerateRandomOnSlot(aSlot, randomName, sizeof(randomName));
+-    if (rv != SECSuccess) {
+-      return nullptr;
+-    }
+-
+-    char buf[sizeof(randomName) * 2 + 4];
+-    strncpy(buf, "CN=", 4);
+-    for (size_t i = 0; i < sizeof(randomName); ++i) {
+-      snprintf(&buf[i * 2 + 3], 3, "%.2x", randomName[i]);
+-    }
+-    buf[sizeof(buf) - 1] = '\0';
+-
+-    return CERT_AsciiToName(buf);
++  JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*aOptions.GetAsObject()));
++  if (!expiration.Init(aCx, value)) {
++    aRv.NoteJSContextException(aCx);
++    return 0;
+   }
+ 
+-  nsresult GenerateCertificate() {
+-    UniquePK11SlotInfo slot(PK11_GetInternalSlot());
+-    MOZ_ASSERT(slot.get());
+-
+-    UniqueCERTName subjectName(GenerateRandomName(slot.get()));
+-    if (!subjectName) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
+-    }
++  if (!expiration.mExpires.WasPassed()) {
++    return EXPIRATION_DEFAULT;
++  }
++  static const uint64_t max =
++      static_cast<uint64_t>(EXPIRATION_MAX / PR_USEC_PER_MSEC);
++  if (expiration.mExpires.Value() > max) {
++    return EXPIRATION_MAX;
++  }
++  return static_cast<PRTime>(expiration.mExpires.Value() * PR_USEC_PER_MSEC);
++}
+ 
+-    UniqueSECKEYPublicKey publicKey(mKeyPair->mPublicKey->GetPublicKey());
+-    UniqueCERTSubjectPublicKeyInfo spki(
+-        SECKEY_CreateSubjectPublicKeyInfo(publicKey.get()));
+-    if (!spki) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
+-    }
++RTCCertificateMetadata::RTCCertificateMetadata()
++    : mExpires(0),
++      mSignatureAlg(SEC_OID_UNKNOWN),
++      mMechanism(CKM_INVALID_MECHANISM),
++      mRsaParams() {}
++
++nsresult RTCCertificateMetadata::Init(JSContext* aCx,
++                                      const ObjectOrString& aAlgorithm,
++                                      SSLKEAType* aAuthType, ErrorResult& aRv) {
++  mExpires = ReadExpires(aCx, aAlgorithm, aRv);
++  if (aRv.Failed()) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
+ 
+-    UniqueCERTCertificateRequest certreq(
+-        CERT_CreateCertificateRequest(subjectName.get(), spki.get(), nullptr));
+-    if (!certreq) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
+-    }
++  mArena = UniquePLArenaPool(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
++  if (!mArena) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
+ 
+-    PRTime now = PR_Now();
+-    PRTime notBefore = now - EXPIRATION_SLACK;
+-    mExpires += now;
++  // Extract algorithm name
++  nsresult rv = GetAlgorithmName(aCx, aAlgorithm, mAlgName);
++  NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+ 
+-    UniqueCERTValidity validity(CERT_CreateValidity(notBefore, mExpires));
+-    if (!validity) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
+-    }
++  // Construct an appropriate KeyAlorithm
++  if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_RSASSA_PKCS1)) {
++    RootedDictionary<RsaHashedKeyGenParams> params(aCx);
++    rv = Coerce(aCx, params, aAlgorithm);
++    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
+ 
+-    unsigned long serial;
+-    // Note: This serial in principle could collide, but it's unlikely, and we
+-    // don't expect anyone to be validating certificates anyway.
+-    SECStatus rv = PK11_GenerateRandomOnSlot(
+-        slot.get(), reinterpret_cast<unsigned char*>(&serial), sizeof(serial));
+-    if (rv != SECSuccess) {
++    // Pull relevant info
++    uint32_t modulusLength = params.mModulusLength;
++    CryptoBuffer publicExponent;
++    if (!publicExponent.Assign(params.mPublicExponent)) {
+       return NS_ERROR_DOM_UNKNOWN_ERR;
+     }
+ 
+-    // NB: CERTCertificates created with CERT_CreateCertificate are not safe to
+-    // use with other NSS functions like CERT_DupCertificate.  The strategy
+-    // here is to create a tbsCertificate ("to-be-signed certificate"), encode
+-    // it, and sign it, resulting in a signed DER certificate that can be
+-    // decoded into a CERTCertificate.
+-    UniqueCERTCertificate tbsCertificate(CERT_CreateCertificate(
+-        serial, subjectName.get(), validity.get(), certreq.get()));
+-    if (!tbsCertificate) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
++    nsString hashName;
++    rv = GetAlgorithmName(aCx, params.mHash, hashName);
++    NS_ENSURE_SUCCESS(rv, rv);
++    if (!hashName.EqualsLiteral(WEBCRYPTO_ALG_SHA256)) {
++      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+     }
+ 
+-    MOZ_ASSERT(mSignatureAlg != SEC_OID_UNKNOWN);
+-    PLArenaPool* arena = tbsCertificate->arena;
++    mMechanism = CKM_RSA_PKCS_KEY_PAIR_GEN;
+ 
+-    rv = SECOID_SetAlgorithmID(arena, &tbsCertificate->signature, mSignatureAlg,
+-                               nullptr);
+-    if (rv != SECSuccess) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
++    // Set up params struct
++    mRsaParams.keySizeInBits = modulusLength;
++    bool converted = publicExponent.GetBigIntValue(mRsaParams.pe);
++    if (!converted) {
++      return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+     }
+ 
+-    // Set version to X509v3.
+-    *(tbsCertificate->version.data) = SEC_CERTIFICATE_VERSION_3;
+-    tbsCertificate->version.len = 1;
+-
+-    SECItem innerDER = {siBuffer, nullptr, 0};
+-    if (!SEC_ASN1EncodeItem(arena, &innerDER, tbsCertificate.get(),
+-                            SEC_ASN1_GET(CERT_CertificateTemplate))) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
++    auto sz = static_cast<size_t>(mRsaParams.keySizeInBits);
++    if (sz < RTCCertificateMinRsaSize) {
++      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+     }
+ 
+-    SECItem* certDer = PORT_ArenaZNew(arena, SECItem);
+-    if (!certDer) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
+-    }
++    SerializeRSAParam(&mParam, &mRsaParams);
+ 
+-    UniqueSECKEYPrivateKey privateKey(mKeyPair->mPrivateKey->GetPrivateKey());
+-    rv = SEC_DerSignData(arena, certDer, innerDER.data, innerDER.len,
+-                         privateKey.get(), mSignatureAlg);
+-    if (rv != SECSuccess) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
+-    }
++    mSignatureAlg = SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION;
++    *aAuthType = ssl_kea_rsa;
++  } else if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_ECDSA)) {
++    RootedDictionary<EcKeyGenParams> params(aCx);
++    rv = Coerce(aCx, params, aAlgorithm);
++    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
+ 
+-    mCertificate.reset(CERT_NewTempCertificate(CERT_GetDefaultCertDB(), certDer,
+-                                               nullptr, false, true));
+-    if (!mCertificate) {
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
++    if (!NormalizeToken(params.mNamedCurve, mNamedCurve)) {
++      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+     }
+-    return NS_OK;
+-  }
+-
+-  nsresult BeforeCrypto() override {
+-    if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_RSASSA_PKCS1)) {
+-      // Double check that size is OK.
+-      auto sz = static_cast<size_t>(mRsaParams.keySizeInBits);
+-      if (sz < RTCCertificateMinRsaSize) {
+-        return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+-      }
+-
+-      KeyAlgorithmProxy& alg = mKeyPair->mPublicKey->Algorithm();
+-      if (alg.mType != KeyAlgorithmProxy::RSA ||
+-          !alg.mRsa.mHash.mName.EqualsLiteral(WEBCRYPTO_ALG_SHA256)) {
+-        return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+-      }
+-
+-      mSignatureAlg = SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION;
+-      mAuthType = ssl_kea_rsa;
+-
+-    } else if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_ECDSA)) {
+-      // We only support good curves in WebCrypto.
+-      // If that ever changes, check that a good one was chosen.
+-
+-      mSignatureAlg = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
+-      mAuthType = ssl_kea_ecdh;
+-    } else {
++    mMechanism = CKM_EC_KEY_PAIR_GEN;
++    if (!SerializeECParams(&mParam,
++                           CreateECParamsForCurve(mNamedCurve, mArena.get()))) {
+       return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+     }
+-    return NS_OK;
+-  }
+ 
+-  nsresult DoCrypto() override {
+-    nsresult rv = GenerateAsymmetricKeyTask::DoCrypto();
+-    NS_ENSURE_SUCCESS(rv, rv);
+-
+-    rv = GenerateCertificate();
+-    NS_ENSURE_SUCCESS(rv, rv);
+-
+-    return NS_OK;
++    // We only support good curves in WebCrypto.
++    // If that ever changes, check that a good one was chosen.
++    mSignatureAlg = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
++    *aAuthType = ssl_kea_ecdh;
++  } else {
++    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+   }
+ 
+-  virtual void Resolve() override {
+-    // Make copies of the private key and certificate, otherwise, when this
+-    // object is deleted, the structures they reference will be deleted too.
+-    UniqueSECKEYPrivateKey key = mKeyPair->mPrivateKey->GetPrivateKey();
+-    CERTCertificate* cert = CERT_DupCertificate(mCertificate.get());
+-    RefPtr<RTCCertificate> result =
+-        new RTCCertificate(mResultPromise->GetParentObject(), key.release(),
+-                           cert, mAuthType, mExpires);
+-    mResultPromise->MaybeResolve(result);
+-  }
+-};
+-
+-static PRTime ReadExpires(JSContext* aCx, const ObjectOrString& aOptions,
+-                          ErrorResult& aRv) {
+-  // This conversion might fail, but we don't really care; use the default.
+-  // If this isn't an object, or it doesn't coerce into the right type,
+-  // then we won't get the |expires| value.  Either will be caught later.
+-  RTCCertificateExpiration expiration;
+-  if (!aOptions.IsObject()) {
+-    return EXPIRATION_DEFAULT;
+-  }
+-  JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*aOptions.GetAsObject()));
+-  if (!expiration.Init(aCx, value)) {
+-    aRv.NoteJSContextException(aCx);
+-    return 0;
+-  }
++  return NS_OK;
++}
+ 
+-  if (!expiration.mExpires.WasPassed()) {
+-    return EXPIRATION_DEFAULT;
+-  }
+-  static const uint64_t max =
+-      static_cast<uint64_t>(EXPIRATION_MAX / PR_USEC_PER_MSEC);
+-  if (expiration.mExpires.Value() > max) {
+-    return EXPIRATION_MAX;
+-  }
+-  return static_cast<PRTime>(expiration.mExpires.Value() * PR_USEC_PER_MSEC);
++RefPtr<RTCCertFingerprintPromise> RTCCertificateMetadata::Generate(
++    nsCOMPtr<nsIRTCCertService> aCertService) {
++  return aCertService->GenerateCertificate(mParam, mExpires, mMechanism,
++                                           mSignatureAlg);
+ }
+ 
+-already_AddRefed<Promise> RTCCertificate::GenerateCertificate(
++already_AddRefed<Promise> RTCCertificate::Generate(
+     const GlobalObject& aGlobal, const ObjectOrString& aOptions,
+-    ErrorResult& aRv, JS::Compartment* aCompartment) {
++    ErrorResult& aRv) {
+   nsIGlobalObject* global = xpc::NativeGlobal(aGlobal.Get());
+-  RefPtr<Promise> p = Promise::Create(global, aRv);
++  RefPtr<Promise> resultPromise = Promise::Create(global, aRv);
+   if (aRv.Failed()) {
+     return nullptr;
+   }
+-  Sequence<nsString> usages;
+-  if (!usages.AppendElement(u"sign"_ns, fallible)) {
+-    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
++
++  nsresult rv = mData.Init(aGlobal.Context(), aOptions, &mAuthType, aRv);
++  if (NS_FAILED(rv)) {
++    // webrtc-pc says to throw NotSupportedError if we have passed "an
++    // algorithm that the user agent cannot or will not use to generate a
++    // certificate". This catches these cases.
++    if (!aRv.Failed()) {
++      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
++    }
+     return nullptr;
+   }
+ 
+-  PRTime expires = ReadExpires(aGlobal.Context(), aOptions, aRv);
+-  if (aRv.Failed()) {
++  mCertService = do_GetService("@mozilla.org/rtccert/service;1");
++  if (!mCertService) {
++    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+     return nullptr;
+   }
+-  RefPtr<WebCryptoTask> task = new GenerateRTCCertificateTask(
+-      global, aGlobal.Context(), aOptions, usages, expires);
+-  task->DispatchWithPromise(p);
+-  return p.forget();
+-}
+-
+-RTCCertificate::RTCCertificate(nsIGlobalObject* aGlobal)
+-    : mGlobal(aGlobal),
+-      mPrivateKey(nullptr),
+-      mCertificate(nullptr),
+-      mAuthType(ssl_kea_null),
+-      mExpires(0) {}
+-
+-RTCCertificate::RTCCertificate(nsIGlobalObject* aGlobal,
+-                               SECKEYPrivateKey* aPrivateKey,
+-                               CERTCertificate* aCertificate,
+-                               SSLKEAType aAuthType, PRTime aExpires)
+-    : mGlobal(aGlobal),
+-      mPrivateKey(aPrivateKey),
+-      mCertificate(aCertificate),
+-      mAuthType(aAuthType),
+-      mExpires(aExpires) {}
++
++  mData.Generate(mCertService)
++      ->Then(
++          GetCurrentSerialEventTarget(), __func__,
++          [s = RefPtr{this}, this,
++           resultPromise](const CertFingerprint& aResult) {
++            mCertFingerprint = aResult;
++            mCertService->GetCertificate(mCertFingerprint)
++                ->Then(
++                    GetCurrentSerialEventTarget(), __func__,
++                    [self = RefPtr{s},
++                     resultPromise](UniquePtr<CertData>&& aResult) mutable {
++                      self->mCertificate = std::move(aResult->mCertificate);
++                      self->mExpires = aResult->mExpires;
++                      resultPromise->MaybeResolve(self);
++                    },
++                    [self = RefPtr{s}, resultPromise](nsresult aError) {
++                      resultPromise->MaybeReject(aError);
++                    });
++          },
++          [s = RefPtr{this}, resultPromise](nsresult aError) {
++            resultPromise->MaybeReject(aError);
++          });
++
++  return resultPromise.forget();
++}
++
++already_AddRefed<Promise> RTCCertificate::GenerateCertificate(
++    const GlobalObject& aGlobal, const ObjectOrString& aOptions,
++    ErrorResult& aRv, JS::Compartment* aCompartment) {
++  RefPtr<RTCCertificate> cert =
++      new RTCCertificate(xpc::NativeGlobal(aGlobal.Get()));
++  return cert->Generate(aGlobal, aOptions, aRv);
++}
++
++RTCCertificate::RTCCertificate(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {};
++
++RTCCertificate::~RTCCertificate() {
++  /* TODO -> how to handle clone?
++    if (mCertService && mCertificate) {
++      mCertService->RemoveCertificate(mCertFingerprint);
++    }
++  */
++}
+ 
+ RefPtr<DtlsIdentity> RTCCertificate::CreateDtlsIdentity() const {
+-  if (!mPrivateKey || !mCertificate) {
++  if (!mCertificate) {
+     return nullptr;
+   }
+-  UniqueSECKEYPrivateKey key(SECKEY_CopyPrivateKey(mPrivateKey.get()));
+-  UniqueCERTCertificate cert(CERT_DupCertificate(mCertificate.get()));
+-  RefPtr<DtlsIdentity> id =
+-      new DtlsIdentity(std::move(key), std::move(cert), mAuthType);
++  RefPtr<DtlsIdentity> id = new DtlsIdentity(mCertFingerprint, mAuthType);
+   return id;
+ }
+ 
+@@ -344,17 +276,10 @@ JSObject* RTCCertificate::WrapObject(JSC
+   return RTCCertificate_Binding::Wrap(aCx, this, aGivenProto);
+ }
+ 
+-bool RTCCertificate::WritePrivateKey(JSStructuredCloneWriter* aWriter) const {
+-  JsonWebKey jwk;
+-  nsresult rv = CryptoKey::PrivateKeyToJwk(mPrivateKey.get(), jwk);
+-  if (NS_FAILED(rv)) {
+-    return false;
+-  }
+-  nsString json;
+-  if (!jwk.ToJSON(json)) {
+-    return false;
+-  }
+-  return StructuredCloneHolder::WriteString(aWriter, json);
++bool RTCCertificate::WriteCertificateFingerprint(
++    JSStructuredCloneWriter* aWriter) const {
++  return JS_WriteBytes(aWriter, mCertFingerprint.mHash,
++                       CertFingerprint::sHashByteLen);
+ }
+ 
+ bool RTCCertificate::WriteCertificate(JSStructuredCloneWriter* aWriter) const {
+@@ -370,27 +295,23 @@ bool RTCCertificate::WriteCertificate(JS
+ 
+ bool RTCCertificate::WriteStructuredClone(
+     JSContext* aCx, JSStructuredCloneWriter* aWriter) const {
+-  if (!mPrivateKey || !mCertificate) {
++  if (!mCertificate) {
+     return false;
+   }
+ 
+   return JS_WriteUint32Pair(aWriter, RTCCERTIFICATE_SC_VERSION, mAuthType) &&
+          JS_WriteUint32Pair(aWriter, (mExpires >> 32) & 0xffffffff,
+                             mExpires & 0xffffffff) &&
+-         WritePrivateKey(aWriter) && WriteCertificate(aWriter);
++         WriteCertificateFingerprint(aWriter) && WriteCertificate(aWriter);
+ }
+ 
+-bool RTCCertificate::ReadPrivateKey(JSStructuredCloneReader* aReader) {
+-  nsString json;
+-  if (!StructuredCloneHolder::ReadString(aReader, json)) {
+-    return false;
+-  }
+-  JsonWebKey jwk;
+-  if (!jwk.Init(json)) {
++bool RTCCertificate::ReadCertificateFingerprint(
++    JSStructuredCloneReader* aReader) {
++  if (!JS_ReadBytes(aReader, mCertFingerprint.mHash,
++                    CertFingerprint::sHashByteLen)) {
+     return false;
+   }
+-  mPrivateKey = CryptoKey::PrivateKeyFromJwk(jwk);
+-  return !!mPrivateKey;
++  return true;
+ }
+ 
+ bool RTCCertificate::ReadCertificate(JSStructuredCloneReader* aReader) {
+@@ -428,7 +349,8 @@ already_AddRefed<RTCCertificate> RTCCert
+   }
+   cert->mExpires = static_cast<PRTime>(high) << 32 | low;
+ 
+-  if (!cert->ReadPrivateKey(aReader) || !cert->ReadCertificate(aReader)) {
++  if (!cert->ReadCertificateFingerprint(aReader) ||
++      !cert->ReadCertificate(aReader)) {
+     return nullptr;
+   }
+ 
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertificate.h
+--- firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc	2024-08-26 16:23:35.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertificate.h	2024-09-30 21:41:07.649369081 +0200
+@@ -15,7 +15,11 @@
+ #include "mozilla/AlreadyAddRefed.h"
+ #include "mozilla/Assertions.h"
+ #include "mozilla/RefPtr.h"
++#include "mozilla/dom/SubtleCryptoBinding.h"
++#include "mozilla/MozPromise.h"
++#include "mozilla/dom/RTCCertService.h"
+ #include "nsCycleCollectionParticipant.h"
++#include "nsICancelableRunnable.h"
+ #include "nsIGlobalObject.h"
+ #include "nsISupports.h"
+ #include "nsWrapperCache.h"
+@@ -41,6 +45,26 @@ class GlobalObject;
+ class ObjectOrString;
+ class Promise;
+ 
++class RTCCertificateMetadata {
++ public:
++  RTCCertificateMetadata();
++
++  nsresult Init(JSContext* aCx, const ObjectOrString& aAlgorithm,
++                SSLKEAType* aAuthType, ErrorResult& aRv);
++  RefPtr<RTCCertFingerprintPromise> Generate(
++      nsCOMPtr<nsIRTCCertService> aCertService);
++
++ private:
++  nsTArray<uint8_t> mParam;
++  PRTime mExpires;
++  SECOidTag mSignatureAlg;
++  UniquePLArenaPool mArena;
++  CK_MECHANISM_TYPE mMechanism;
++  PK11RSAGenParams mRsaParams;
++  nsString mNamedCurve;
++  nsString mAlgName;
++};
++
+ class RTCCertificate final : public nsISupports, public nsWrapperCache {
+  public:
+   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+@@ -52,9 +76,6 @@ class RTCCertificate final : public nsIS
+       ErrorResult& aRv, JS::Compartment* aCompartment = nullptr);
+ 
+   explicit RTCCertificate(nsIGlobalObject* aGlobal);
+-  RTCCertificate(nsIGlobalObject* aGlobal, SECKEYPrivateKey* aPrivateKey,
+-                 CERTCertificate* aCertificate, SSLKEAType aAuthType,
+-                 PRTime aExpires);
+ 
+   nsIGlobalObject* GetParentObject() const { return mGlobal; }
+   virtual JSObject* WrapObject(JSContext* aCx,
+@@ -76,20 +97,29 @@ class RTCCertificate final : public nsIS
+       JSStructuredCloneReader* aReader);
+ 
+  private:
+-  ~RTCCertificate() = default;
++  // TODO: cert ref counts? -> clone = remove?
++  ~RTCCertificate();
+   void operator=(const RTCCertificate&) = delete;
+   RTCCertificate(const RTCCertificate&) = delete;
+ 
++  already_AddRefed<Promise> Generate(const GlobalObject& aGlobal,
++                                     const ObjectOrString& aOptions,
++                                     ErrorResult& aRv);
++
+   bool ReadCertificate(JSStructuredCloneReader* aReader);
+-  bool ReadPrivateKey(JSStructuredCloneReader* aReader);
++  bool ReadCertificateFingerprint(JSStructuredCloneReader* aReader);
+   bool WriteCertificate(JSStructuredCloneWriter* aWriter) const;
+-  bool WritePrivateKey(JSStructuredCloneWriter* aWriter) const;
++  bool WriteCertificateFingerprint(JSStructuredCloneWriter* aWriter) const;
+ 
+   RefPtr<nsIGlobalObject> mGlobal;
+-  UniqueSECKEYPrivateKey mPrivateKey;
++  CertFingerprint mCertFingerprint;
++
++  RTCCertificateMetadata mData;
++
++  nsCOMPtr<nsIRTCCertService> mCertService;
+   UniqueCERTCertificate mCertificate;
+-  SSLKEAType mAuthType;
+-  PRTime mExpires;
++  SSLKEAType mAuthType = ssl_kea_null;
++  PRTime mExpires = 0;
+ };
+ 
+ }  // namespace dom
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp
+--- firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp.webrtc	2024-09-30 21:41:07.648369048 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp	2024-09-30 21:41:07.648369048 +0200
+@@ -0,0 +1,154 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "RTCCertService.h"
++#include "mozilla/net/SocketProcessBridgeChild.h"
++#include "mozilla/ipc/BackgroundChild.h"
++#include "mozilla/ipc/Endpoint.h"
++#include "mozilla/ipc/PBackgroundChild.h"
++
++namespace mozilla::dom {
++
++NS_IMPL_ISUPPORTS(RTCCertService, nsIRTCCertService)
++
++already_AddRefed<nsIRTCCertService> NewRTCCertService() {
++  nsCOMPtr<nsIRTCCertService> certService(new RTCCertService());
++  certService->Initialize();
++  return certService.forget();
++}
++
++void RTCCertService::Initialize() {
++  using EndpointPromise =
++      MozPromise<mozilla::ipc::Endpoint<PRTCCertServiceTransactionChild>,
++                 nsCString, true>;
++  mInitPromise =
++      net::SocketProcessBridgeChild::GetSocketProcessBridge()
++          ->Then(
++              GetCurrentSerialEventTarget(), __func__,
++              [](const RefPtr<net::SocketProcessBridgeChild>& aBridge) {
++                mozilla::ipc::Endpoint<PRTCCertServiceTransactionParent>
++                    parentEndpoint;
++                mozilla::ipc::Endpoint<PRTCCertServiceTransactionChild>
++                    childEndpoint;
++
++                mozilla::dom::PRTCCertServiceTransaction::CreateEndpoints(
++                    &parentEndpoint, &childEndpoint);
++
++                if (!aBridge || !aBridge->SendInitRTCCertServiceTransaction(
++                                    std::move(parentEndpoint))) {
++                  NS_WARNING(
++                      "RTCCertService async init failed! Webrtc "
++                      "networking "
++                      "will not work!");
++                  return EndpointPromise::CreateAndReject(
++                      nsCString("SendInitRTCCertServiceTransaction failed!"),
++                      __func__);
++                }
++                return EndpointPromise::CreateAndResolve(
++                    std::move(childEndpoint), __func__);
++              },
++              [](const nsCString& aError) {
++                return EndpointPromise::CreateAndReject(aError, __func__);
++              })
++          ->Then(
++              GetCurrentSerialEventTarget(), __func__,
++              [this, self = RefPtr<RTCCertService>(this)](
++                  mozilla::ipc::Endpoint<PRTCCertServiceTransactionChild>&&
++                      aEndpoint) {
++                RefPtr<RTCCertServiceTransactionChild> child =
++                    new RTCCertServiceTransactionChild();
++                aEndpoint.Bind(child);
++                mChild = child;
++
++                return InitPromise::CreateAndResolve(true, __func__);
++              },
++              [=](const nsCString& aError) {
++                NS_WARNING(
++                    "RTCCertService async init failed! Webrtc "
++                    "networking "
++                    "will not work!");
++                return InitPromise::CreateAndReject(aError, __func__);
++              });
++}
++
++RefPtr<RTCCertFingerprintPromise> RTCCertService::GenerateCertificate(
++    const nsTArray<uint8_t>& aParam, PRTime aExpires, uint32_t aMechanism,
++    uint32_t aSignatureAlg) {
++  return mInitPromise->Then(
++      GetCurrentSerialEventTarget(), __func__,
++      [self = RefPtr<RTCCertService>(this), this, param = aParam.Clone(),
++       aExpires, aMechanism, aSignatureAlg](bool /* dummy */) {
++        if (!mChild) {
++          return RTCCertFingerprintPromise::CreateAndReject(NS_ERROR_FAILURE,
++                                                            __func__);
++        }
++        RefPtr<RTCCertFingerprintPromise> promise =
++            mChild
++                ->SendGenerateCertificate(param, aExpires, aMechanism,
++                                          aSignatureAlg)
++                ->Then(
++                    GetCurrentSerialEventTarget(), __func__,
++                    [](CertFingerprint&& aCertFingerprint) {
++                      return RTCCertFingerprintPromise::CreateAndResolve(
++                          std::move(aCertFingerprint), __func__);
++                    },
++                    [](mozilla::ipc::ResponseRejectReason aReason) {
++                      return RTCCertFingerprintPromise::CreateAndReject(
++                          NS_ERROR_FAILURE, __func__);
++                    });
++        return promise;
++      },
++      [](const nsCString& aError) {
++        return RTCCertFingerprintPromise::CreateAndReject(NS_ERROR_FAILURE,
++                                                          __func__);
++      });
++}
++
++void RTCCertService::RemoveCertificate(
++    const mozilla::dom::CertFingerprint aCertFingerprint) {
++  mInitPromise->Then(
++      GetCurrentSerialEventTarget(), __func__,
++      [self = RefPtr<RTCCertService>(this), this,
++       aCertFingerprint](bool /* dummy */) {
++        if (mChild) {
++          mChild->SendRemoveCertificate(aCertFingerprint);
++        }
++      },
++      [](const nsCString& aError) {});
++}
++
++RefPtr<RTCCertificatePromise> RTCCertService::GetCertificate(
++    const CertFingerprint aCertFingerprint) {
++  return mInitPromise->Then(
++      GetCurrentSerialEventTarget(), __func__,
++      [self = RefPtr<RTCCertService>(this), this,
++       aCertFingerprint](bool /* dummy */) {
++        if (!mChild) {
++          return RTCCertificatePromise::CreateAndReject(NS_ERROR_FAILURE,
++                                                        __func__);
++        }
++        RefPtr<RTCCertificatePromise> promise =
++            mChild->SendGetCertificate(aCertFingerprint)
++                ->Then(
++                    GetCurrentSerialEventTarget(), __func__,
++                    [](const CertDataIPC& aCertDataIPC) {
++                      return RTCCertificatePromise::CreateAndResolve(
++                          MakeUnique<CertData>(&aCertDataIPC), __func__);
++                    },
++
++                    [](mozilla::ipc::ResponseRejectReason aReason) {
++                      return RTCCertificatePromise::CreateAndReject(
++                          NS_ERROR_FAILURE, __func__);
++                    });
++        return promise;
++      },
++      [](const nsCString& aError) {
++        return RTCCertificatePromise::CreateAndReject(NS_ERROR_FAILURE,
++                                                      __func__);
++      });
++}
++
++}  // namespace mozilla::dom
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp
+--- firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp.webrtc	2024-09-30 21:41:07.648369048 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp	2024-09-30 21:41:07.648369048 +0200
+@@ -0,0 +1,77 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "RTCCertServiceData.h"
++#include "cert.h"
++#include "mozpkix/nss_scoped_ptrs.h"
++#include "sslerr.h"
++
++namespace mozilla::dom {
++
++CertFingerprint::CertFingerprint(const nsTArray<uint8_t>& aCertFingerprint) {
++  MOZ_ASSERT(aCertFingerprint.Length() == sHashByteLen);
++  memcpy(mHash, const_cast<uint8_t*>(aCertFingerprint.Elements()),
++         static_cast<unsigned int>(aCertFingerprint.Length()));
++}
++
++CertFingerprint::operator nsTArray<uint8_t>() {
++  nsTArray<uint8_t> ret;
++  ret.AppendElements(reinterpret_cast<unsigned char*>(mHash), sHashByteLen);
++  return ret;
++}
++
++bool CertFingerprint::Match(const CertFingerprint* aCertFingerprint) {
++  return mHash[0] == aCertFingerprint->mHash[0] &&
++         mHash[1] == aCertFingerprint->mHash[1];
++}
++
++CertDataIPC::CertDataIPC(const CertData* aCertData) {
++  mExpires = aCertData->mExpires;
++  mCertificate.AppendElements(aCertData->mCertificate->derCert.data,
++                              aCertData->mCertificate->derCert.len);
++}
++
++CertData::CertData(const CertDataIPC* aCertDataIPC) {
++  SECItem certDer = {
++      siBuffer, const_cast<uint8_t*>(aCertDataIPC->mCertificate.Elements()),
++      static_cast<unsigned int>(aCertDataIPC->mCertificate.Length())};
++  UniqueCERTCertificate cert(CERT_NewTempCertificate(
++      CERT_GetDefaultCertDB(), &certDer, nullptr, true, true));
++  mCertificate = std::move(cert);
++  mExpires = aCertDataIPC->mExpires;
++}
++
++void SerializeRSAParam(nsTArray<uint8_t>* aParams,
++                       PK11RSAGenParams* aRsaParams) {
++  aParams->AppendElements(reinterpret_cast<uint8_t*>(aRsaParams),
++                          sizeof(*aRsaParams));
++}
++
++PK11RSAGenParams DeserializeRSAParam(nsTArray<uint8_t>* aParams) {
++  MOZ_ASSERT(aParams->Length() <= sizeof(PK11RSAGenParams));
++  return *(reinterpret_cast<PK11RSAGenParams*>(aParams->Elements()));
++}
++
++bool SerializeECParams(nsTArray<uint8_t>* aParams, SECItem* aECParams) {
++  if (!aECParams) {
++    return false;
++  }
++  aParams->AppendElements(reinterpret_cast<uint8_t*>(aECParams->data),
++                          aECParams->len);
++  return true;
++}
++
++SECItem* DeserializeECParams(nsTArray<uint8_t>* aParams) {
++  SECItem* ret = ::SECITEM_AllocItem(nullptr, nullptr, 0);
++  SECItem it = {siBuffer, reinterpret_cast<uint8_t*>(aParams->Elements()),
++                static_cast<unsigned int>(aParams->Length())};
++  if (::SECITEM_CopyItem(nullptr, ret, &it) != SECSuccess) {
++    return nullptr;
++  }
++  return ret;
++}
++
++}  // namespace mozilla::dom
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h
+--- firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h.webrtc	2024-09-30 21:41:07.649369081 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h	2024-09-30 21:41:07.649369081 +0200
+@@ -0,0 +1,105 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef mozilla_dom_RTCCertServiceGlobal_h_
++#define mozilla_dom_RTCCertServiceGlobal_h_
++
++#include "ScopedNSSTypes.h"
++#include "ipc/IPCMessageUtils.h"
++#include "mozilla/ipc/IPDLParamTraits.h"
++#include "mozilla/MozPromise.h"
++
++namespace mozilla {
++namespace dom {
++
++struct CertFingerprint {
++  CertFingerprint() = default;
++  explicit CertFingerprint(const nsTArray<uint8_t>& aCertFingerprint);
++  operator nsTArray<uint8_t>();
++
++  bool Match(const struct CertFingerprint* aCertFingerprint);
++  unsigned char* AsChar() { return reinterpret_cast<unsigned char*>(mHash); }
++
++ public:
++  const static size_t sHashByteLen = 16;
++  uint64_t mHash[2];
++};
++
++struct CertData;
++struct CertDataIPC {
++  CertDataIPC() = default;
++  explicit CertDataIPC(const CertData* aCertData);
++
++ public:
++  nsTArray<uint8_t> mCertificate;
++  PRTime mExpires;
++};
++
++struct CertData {
++  CertData(UniqueCERTCertificate aCertificate, PRTime aExpires)
++      : mCertificate(std::move(aCertificate)), mExpires(aExpires) {}
++  explicit CertData(const CertDataIPC* aCertDataIPC);
++
++  // Don't copy CertData
++  CertData(const CertData&) = delete;
++  CertData& operator=(const CertData&) = delete;
++
++ public:
++  UniqueCERTCertificate mCertificate;
++  PRTime mExpires;
++};
++
++using RTCCertFingerprintPromise =
++    MozPromise<CertFingerprint, nsresult, /* IsExclusive = */ true>;
++using RTCCertificatePromise =
++    MozPromise<UniquePtr<CertData>, nsresult, /* IsExclusive = */ true>;
++
++void SerializeRSAParam(nsTArray<uint8_t>* aParams,
++                       PK11RSAGenParams* aRsaParams);
++PK11RSAGenParams DeserializeRSAParam(nsTArray<uint8_t>* aParams);
++
++bool SerializeECParams(nsTArray<uint8_t>* aParams, SECItem* aECParams);
++SECItem* DeserializeECParams(nsTArray<uint8_t>* aParams);
++}  // namespace dom
++
++namespace ipc {
++template <>
++struct IPDLParamTraits<dom::CertFingerprint> {
++  typedef dom::CertFingerprint paramType;
++  static void Write(IPC::MessageWriter* aWriter, ipc::IProtocol* aActor,
++                    const paramType& aVar) {
++    WriteIPDLParam(aWriter, aActor, aVar.mHash[0]);
++    WriteIPDLParam(aWriter, aActor, aVar.mHash[1]);
++  }
++  static bool Read(IPC::MessageReader* aReader, mozilla::ipc::IProtocol* aActor,
++                   paramType* aVar) {
++    if (!ReadIPDLParam(aReader, aActor, aVar->mHash) ||
++        !ReadIPDLParam(aReader, aActor, aVar->mHash + 1)) {
++      return false;
++    }
++    return true;
++  }
++};
++
++template <>
++struct IPDLParamTraits<dom::CertDataIPC> {
++  typedef dom::CertDataIPC paramType;
++  static void Write(IPC::MessageWriter* aWriter, ipc::IProtocol* aActor,
++                    const paramType& aVar) {
++    WriteIPDLParam(aWriter, aActor, aVar.mCertificate);
++    WriteIPDLParam(aWriter, aActor, aVar.mExpires);
++  }
++  static bool Read(IPC::MessageReader* aReader, mozilla::ipc::IProtocol* aActor,
++                   paramType* aVar) {
++    if (!ReadIPDLParam(aReader, aActor, &aVar->mCertificate) ||
++        !ReadIPDLParam(aReader, aActor, &aVar->mExpires)) {
++      return false;
++    }
++    return true;
++  }
++};
++}  // namespace ipc
++}  // namespace mozilla
++
++#endif  // mozilla_dom_RTCCertServiceGlobal_h_
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertService.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertService.h
+--- firefox-128.2.0/dom/media/webrtc/RTCCertService.h.webrtc	2024-09-30 21:41:07.648369048 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertService.h	2024-09-30 21:41:07.648369048 +0200
+@@ -0,0 +1,49 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef mozilla_dom_RTCCertService_h_
++#define mozilla_dom_RTCCertService_h_
++
++#include "mozilla/dom/PRTCCertServiceTransactionChild.h"
++#include "nsIRTCCertService.h"
++#include "mozilla/RefPtr.h"
++
++namespace mozilla::dom {
++
++already_AddRefed<nsIRTCCertService> NewRTCCertService();
++
++class RTCCertServiceTransactionChild : public PRTCCertServiceTransactionChild {
++ public:
++  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RTCCertServiceTransactionChild);
++
++ private:
++  ~RTCCertServiceTransactionChild() = default;
++};
++
++class RTCCertService final : public nsIRTCCertService {
++ public:
++  NS_DECL_THREADSAFE_ISUPPORTS
++  NS_DECL_NSIRTCCERTSERVICE
++
++  RTCCertService() = default;
++
++ private:
++  ~RTCCertService() = default;
++
++  RefPtr<RTCCertServiceTransactionChild> mChild;
++
++  // |mChild| can only be initted asynchronously, |mInitPromise| resolves
++  // when that happens. The |Then| calls make it convenient to dispatch API
++  // calls to main, which is a bonus.
++  // Init promise is not exclusive; this lets us call |Then| on it for every
++  // API call we get, instead of creating another promise each time.
++  typedef MozPromise<bool, nsCString, false> InitPromise;
++  RefPtr<InitPromise> mInitPromise;
++};
++
++}  // namespace mozilla::dom
++
++#endif  // mozilla_dom_CertServiceChild_h
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp
+--- firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp.webrtc	2024-09-30 21:41:07.649369081 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp	2024-09-30 21:41:07.649369081 +0200
+@@ -0,0 +1,353 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "RTCCertCache.h"
++#include "RTCCertServiceParent.h"
++#include "mozilla/ipc/PBackgroundParent.h"
++#include "mozilla/ipc/BackgroundParent.h"
++
++#define ONE_DAY                                 \
++  PRTime(PR_USEC_PER_SEC) * PRTime(60)  /*sec*/ \
++      * PRTime(60) /*min*/ * PRTime(24) /*hours*/
++#define EXPIRATION_SLACK ONE_DAY
++
++namespace mozilla::dom {
++
++using RTCCertificateGeneratorPromise =
++    MozPromise<UniquePtr<GeneratedCertificate>, nsresult,
++               /* IsExclusive = */ true>;
++
++class RTCCertificateGenerator final : public CancelableRunnable {
++ public:
++  RTCCertificateGenerator();
++  RefPtr<RTCCertificateGeneratorPromise> Generate(nsTArray<uint8_t>& aParam,
++                                                  PRTime aExpires,
++                                                  CK_MECHANISM_TYPE aMechanism,
++                                                  SECOidTag aSignatureAlg);
++
++ private:
++  ~RTCCertificateGenerator();
++
++  bool IsOnOriginalThread() {
++    return !mOriginalEventTarget || mOriginalEventTarget->IsOnCurrentThread();
++  }
++
++  nsresult GenerateKeys();
++  nsresult GenerateCertificate();
++
++  NS_IMETHOD Run() override;
++  nsresult Cancel() override;
++  void Finish();
++
++  UniquePtr<GeneratedCertificate> mGen;
++
++  // Source data
++  void* mParam = nullptr;
++  PK11RSAGenParams mRsaParams;
++  SECItem* mCurveParams = nullptr;
++  CK_MECHANISM_TYPE mMechanism = 0;
++  SECOidTag mSignatureAlg = SEC_OID_UNKNOWN;
++  nsresult mCryptoResult = NS_OK;
++
++  RefPtr<RTCCertificateGeneratorPromise::Private> mGenPromise;
++  nsCOMPtr<nsISerialEventTarget> mOriginalEventTarget;
++};
++
++const size_t RTCCertificateCommonNameLength = 16;
++
++nsresult RTCCertificateGenerator::GenerateKeys() {
++  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
++  MOZ_ASSERT(slot.get());
++
++  mGen->mPrivateKey = UniqueSECKEYPrivateKey(PK11_GenerateKeyPair(
++      slot.get(), mMechanism, mParam, TempPtrToSetter(&mGen->mPublicKey),
++      PR_FALSE, PR_TRUE, nullptr));
++
++  if (!mGen->mPrivateKey.get() || !mGen->mPublicKey.get()) {
++    return NS_ERROR_DOM_OPERATION_ERR;
++  }
++
++  return NS_OK;
++}
++
++static CERTName* GenerateRandomName(PK11SlotInfo* aSlot) {
++  uint8_t randomName[RTCCertificateCommonNameLength];
++  SECStatus rv =
++      PK11_GenerateRandomOnSlot(aSlot, randomName, sizeof(randomName));
++  if (rv != SECSuccess) {
++    return nullptr;
++  }
++
++  char buf[sizeof(randomName) * 2 + 4];
++  strncpy(buf, "CN=", 4);
++  for (size_t i = 0; i < sizeof(randomName); ++i) {
++    snprintf(&buf[i * 2 + 3], 3, "%.2x", randomName[i]);
++  }
++  buf[sizeof(buf) - 1] = '\0';
++
++  return CERT_AsciiToName(buf);
++}
++
++nsresult RTCCertificateGenerator::GenerateCertificate() {
++  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
++  MOZ_ASSERT(slot.get());
++
++  UniqueCERTName subjectName(GenerateRandomName(slot.get()));
++  if (!subjectName) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  UniqueCERTSubjectPublicKeyInfo spki(
++      SECKEY_CreateSubjectPublicKeyInfo(mGen->mPublicKey.get()));
++  if (!spki) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  UniqueCERTCertificateRequest certreq(
++      CERT_CreateCertificateRequest(subjectName.get(), spki.get(), nullptr));
++  if (!certreq) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  PRTime now = PR_Now();
++  PRTime notBefore = now - EXPIRATION_SLACK;
++  mGen->mExpires += now;
++
++  UniqueCERTValidity validity(CERT_CreateValidity(notBefore, mGen->mExpires));
++  if (!validity) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  unsigned long serial;
++  // Note: This serial in principle could collide, but it's unlikely, and we
++  // don't expect anyone to be validating certificates anyway.
++  SECStatus rv = PK11_GenerateRandomOnSlot(
++      slot.get(), reinterpret_cast<unsigned char*>(&serial), sizeof(serial));
++  if (rv != SECSuccess) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  // NB: CERTCertificates created with CERT_CreateCertificate are not safe to
++  // use with other NSS functions like CERT_DupCertificate.  The strategy
++  // here is to create a tbsCertificate ("to-be-signed certificate"), encode
++  // it, and sign it, resulting in a signed DER certificate that can be
++  // decoded into a CERTCertificate.
++  UniqueCERTCertificate tbsCertificate(CERT_CreateCertificate(
++      serial, subjectName.get(), validity.get(), certreq.get()));
++  if (!tbsCertificate) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  MOZ_ASSERT(mSignatureAlg != SEC_OID_UNKNOWN);
++  PLArenaPool* arena = tbsCertificate->arena;
++
++  rv = SECOID_SetAlgorithmID(arena, &tbsCertificate->signature, mSignatureAlg,
++                             nullptr);
++  if (rv != SECSuccess) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  // Set version to X509v3.
++  *(tbsCertificate->version.data) = SEC_CERTIFICATE_VERSION_3;
++  tbsCertificate->version.len = 1;
++
++  SECItem innerDER = {siBuffer, nullptr, 0};
++  if (!SEC_ASN1EncodeItem(arena, &innerDER, tbsCertificate.get(),
++                          SEC_ASN1_GET(CERT_CertificateTemplate))) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  SECItem* certDer = PORT_ArenaZNew(arena, SECItem);
++  if (!certDer) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  rv = SEC_DerSignData(arena, certDer, innerDER.data, innerDER.len,
++                       mGen->mPrivateKey.get(), mSignatureAlg);
++  if (rv != SECSuccess) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  mGen->mCertificate.reset(CERT_NewTempCertificate(
++      CERT_GetDefaultCertDB(), certDer, nullptr, false, true));
++  if (!mGen->mCertificate) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  if (PK11_HashBuf(SEC_OID_MD5, mGen->mCertFingerprint.AsChar(), certDer->data,
++                   AssertedCast<int32_t>(certDer->len)) != SECSuccess) {
++    return NS_ERROR_FAILURE;
++  }
++
++  return NS_OK;
++}
++
++RefPtr<RTCCertificateGeneratorPromise> RTCCertificateGenerator::Generate(
++    nsTArray<uint8_t>& aParam, PRTime aExpires, CK_MECHANISM_TYPE aMechanism,
++    SECOidTag aSignatureAlg) {
++  mGenPromise = MakeRefPtr<RTCCertificateGeneratorPromise::Private>(__func__);
++
++  mGen = MakeUnique<GeneratedCertificate>();
++  mGen->mExpires = aExpires;
++
++  mMechanism = aMechanism;
++  mSignatureAlg = aSignatureAlg;
++
++  if (mMechanism == CKM_RSA_PKCS_KEY_PAIR_GEN) {
++    mRsaParams = DeserializeRSAParam(&aParam);
++    mParam = &mRsaParams;
++  } else if (mMechanism == CKM_EC_KEY_PAIR_GEN) {
++    mCurveParams = DeserializeECParams(&aParam);
++    mParam = mCurveParams;
++  } else {
++    mGenPromise->Reject(NS_ERROR_NOT_IMPLEMENTED, __func__);
++    return mGenPromise;
++  }
++
++  // Store calling thread
++  mOriginalEventTarget = GetCurrentSerialEventTarget();
++
++  // dispatch to thread pool
++  if (!EnsureNSSInitializedChromeOrContent()) {
++    mGenPromise->Reject(NS_ERROR_FAILURE, __func__);
++    return mGenPromise;
++  }
++
++  mCryptoResult = NS_DispatchBackgroundTask(this);
++  if (NS_FAILED(mCryptoResult)) {
++    mGenPromise->Reject(mCryptoResult, __func__);
++    return mGenPromise;
++  }
++
++  return mGenPromise;
++}
++
++RTCCertificateGenerator::RTCCertificateGenerator()
++    : CancelableRunnable("RTCCertificateGenerator") {}
++
++RTCCertificateGenerator::~RTCCertificateGenerator() {
++  if (mCurveParams) {
++    ::SECITEM_FreeItem(mCurveParams, PR_TRUE);
++    mCurveParams = nullptr;
++  }
++}
++
++void RTCCertificateGenerator::Finish() {
++  MOZ_ASSERT(IsOnOriginalThread());
++
++  if (NS_FAILED(mCryptoResult)) {
++    mGenPromise->Reject(mCryptoResult, __func__);
++  } else {
++    mGenPromise->Resolve(std::move(mGen), __func__);
++  }
++  mGenPromise = nullptr;
++}
++
++NS_IMETHODIMP
++RTCCertificateGenerator::Run() {
++  // Run heavy crypto operations on the thread pool, off the original thread.
++  if (!IsOnOriginalThread()) {
++    mCryptoResult = GenerateKeys();
++    if (NS_SUCCEEDED(mCryptoResult)) {
++      mCryptoResult = GenerateCertificate();
++    }
++
++    // Back to the original thread, i.e. continue below.
++    mOriginalEventTarget->Dispatch(this, NS_DISPATCH_NORMAL);
++    return NS_OK;
++  }
++
++  Finish();
++  return NS_OK;
++}
++
++nsresult RTCCertificateGenerator::Cancel() {
++  MOZ_ASSERT(IsOnOriginalThread());
++  mCryptoResult = NS_BINDING_ABORTED;
++  Finish();
++  return NS_OK;
++}
++
++RefPtr<RTCCertFingerprintPromise> RTCCertServiceParent::GenerateCertificate(
++    nsTArray<uint8_t>& aParam, PRTime aExpires, uint32_t aMechanism,
++    uint32_t aSignatureAlg) {
++  RefPtr<RTCCertFingerprintPromise::Private> resultPromise =
++      MakeRefPtr<RTCCertFingerprintPromise::Private>(__func__);
++
++  RefPtr<RTCCertificateGenerator> gen = new RTCCertificateGenerator();
++  gen->Generate(aParam, aExpires, aMechanism,
++                static_cast<SECOidTag>(aSignatureAlg))
++      ->Then(GetCurrentSerialEventTarget(), __func__,
++             [s = RefPtr{this}, resultPromise](
++                 RTCCertificateGeneratorPromise::ResolveOrRejectValue&&
++                     aValue) mutable {
++               if (aValue.IsResolve()) {
++                 UniquePtr<GeneratedCertificate> genCert =
++                     std::move(aValue.ResolveValue());
++                 CertFingerprint certFingerprint = genCert->mCertFingerprint;
++                 RTCCertCache::CacheCert(std::move(genCert));
++                 resultPromise->Resolve(certFingerprint, __func__);
++               } else if (aValue.IsReject()) {
++                 resultPromise->Reject(aValue.RejectValue(), __func__);
++               }
++             });
++
++  return resultPromise;
++}
++
++RefPtr<RTCCertificatePromise> RTCCertServiceParent::GetCertificate(
++    const CertFingerprint aCertFingerprint) {
++  if (GeneratedCertificate* cert = RTCCertCache::LookupCert(aCertFingerprint)) {
++    auto data = MakeUnique<CertData>(
++        UniqueCERTCertificate(CERT_DupCertificate(cert->mCertificate.get())),
++        cert->mExpires);
++    return RTCCertificatePromise::CreateAndResolve(std::move(data), __func__);
++  }
++  return RTCCertificatePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
++}
++
++mozilla::ipc::IPCResult RTCCertServiceParent::RecvGenerateCertificate(
++    nsTArray<uint8_t>&& aParam, const PRTime& aExpires,
++    const uint32_t& aMechanism, const uint32_t& aSignatureAlg,
++    GenerateCertificateResolver&& aResolve) {
++  GenerateCertificate(aParam, aExpires, aMechanism, aSignatureAlg)
++      ->Then(GetCurrentSerialEventTarget(), __func__,
++             [aResolve = std::move(aResolve)](
++                 const dom::RTCCertFingerprintPromise::ResolveOrRejectValue&
++                     aResult) {
++               if (aResult.IsResolve()) {
++                 aResolve(aResult.ResolveValue());
++               } else {
++                 aResolve(CertFingerprint());
++               }
++             });
++  return IPC_OK();
++}
++
++mozilla::ipc::IPCResult RTCCertServiceParent::RecvRemoveCertificate(
++    const CertFingerprint& aCertFingerprint) {
++  RTCCertCache::RemoveCert(aCertFingerprint);
++  return IPC_OK();
++}
++
++mozilla::ipc::IPCResult RTCCertServiceParent::RecvGetCertificate(
++    const CertFingerprint& aCertFingerprint,
++    GetCertificateResolver&& aResolve) {
++  GetCertificate(aCertFingerprint)
++      ->Then(
++          GetCurrentSerialEventTarget(), __func__,
++          [aResolve = std::move(aResolve)](
++              const dom::RTCCertificatePromise::ResolveOrRejectValue& aResult) {
++            if (aResult.IsResolve()) {
++              aResolve(CertDataIPC(aResult.ResolveValue().get()));
++            } else {
++              aResolve(CertDataIPC());
++            }
++          });
++  return IPC_OK();
++}
++
++}  // namespace mozilla::dom
+diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h
+--- firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h.webrtc	2024-09-30 21:41:07.649369081 +0200
++++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h	2024-09-30 21:41:07.649369081 +0200
+@@ -0,0 +1,42 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef mozilla_dom_CertServiceParent_h
++#define mozilla_dom_CertServiceParent_h
++
++#include "mozilla/dom/PRTCCertServiceTransactionParent.h"
++#include "mozilla/dom/RTCCertServiceData.h"
++
++namespace mozilla::dom {
++
++class RTCCertServiceParent final : public PRTCCertServiceTransactionParent {
++ public:
++  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RTCCertServiceParent);
++  RTCCertServiceParent() = default;
++
++  mozilla::ipc::IPCResult RecvGenerateCertificate(
++      nsTArray<uint8_t>&& aParam, const PRTime& aExpires,
++      const uint32_t& aMechanism, const uint32_t& aSignatureAlg,
++      GenerateCertificateResolver&& aResolve);
++  mozilla::ipc::IPCResult RecvRemoveCertificate(
++      const CertFingerprint& aCertFingerprint);
++  mozilla::ipc::IPCResult RecvGetCertificate(
++      const CertFingerprint& aCertFingerprint,
++      GetCertificateResolver&& aResolve);
++
++  RefPtr<RTCCertFingerprintPromise> GenerateCertificate(
++      nsTArray<uint8_t>& aParam, PRTime aExpires, uint32_t aMechanism,
++      uint32_t aSignatureAlg);
++  RefPtr<RTCCertificatePromise> GetCertificate(
++      const CertFingerprint aCertFingerprint);
++
++ private:
++  ~RTCCertServiceParent() = default;
++};
++
++}  // namespace mozilla::dom
++
++#endif  // mozilla_dom_CertServiceTransactionParent_h
+diff -up firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp.webrtc firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp
+--- firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp.webrtc	2024-08-26 16:23:35.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp	2024-09-30 21:41:07.651369147 +0200
+@@ -17,136 +17,19 @@
+ #include "sslerr.h"
+ 
+ #include "mozilla/Sprintf.h"
++#include "mozilla/dom/RTCCertCache.h"
+ 
+ namespace mozilla {
+ 
+-SECItem* WrapPrivateKeyInfoWithEmptyPassword(
+-    SECKEYPrivateKey* pk) /* encrypt this private key */
+-{
+-  if (!pk) {
+-    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+-    return nullptr;
+-  }
+-
+-  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
+-  if (!slot) {
+-    return nullptr;
+-  }
+-
+-  // For private keys, NSS cannot export anything other than RSA, but we need EC
+-  // also. So, we use the private key encryption function to serialize instead,
+-  // using a hard-coded dummy password; this is not intended to provide any
+-  // additional security, it just works around a limitation in NSS.
+-  SECItem dummyPassword = {siBuffer, nullptr, 0};
+-  UniqueSECKEYEncryptedPrivateKeyInfo epki(PK11_ExportEncryptedPrivKeyInfo(
+-      slot.get(), SEC_OID_AES_128_CBC, &dummyPassword, pk, 1, nullptr));
+-
+-  if (!epki) {
+-    return nullptr;
+-  }
+-
+-  return SEC_ASN1EncodeItem(
+-      nullptr, nullptr, epki.get(),
+-      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(nullptr, false));
+-}
+-
+-SECStatus UnwrapPrivateKeyInfoWithEmptyPassword(
+-    SECItem* derPKI, const UniqueCERTCertificate& aCert,
+-    SECKEYPrivateKey** privk) {
+-  if (!derPKI || !aCert || !privk) {
+-    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+-    return SECFailure;
+-  }
+-
+-  UniqueSECKEYPublicKey publicKey(CERT_ExtractPublicKey(aCert.get()));
+-  // This is a pointer to data inside publicKey
+-  SECItem* publicValue = nullptr;
+-  switch (publicKey->keyType) {
+-    case dsaKey:
+-      publicValue = &publicKey->u.dsa.publicValue;
+-      break;
+-    case dhKey:
+-      publicValue = &publicKey->u.dh.publicValue;
+-      break;
+-    case rsaKey:
+-      publicValue = &publicKey->u.rsa.modulus;
+-      break;
+-    case ecKey:
+-      publicValue = &publicKey->u.ec.publicValue;
+-      break;
+-    default:
+-      MOZ_ASSERT(false);
+-      PR_SetError(SSL_ERROR_BAD_CERTIFICATE, 0);
+-      return SECFailure;
+-  }
+-
+-  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
+-  if (!slot) {
+-    return SECFailure;
+-  }
+-
+-  UniquePLArenaPool temparena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
+-  if (!temparena) {
+-    return SECFailure;
+-  }
+-
+-  SECKEYEncryptedPrivateKeyInfo* epki =
+-      PORT_ArenaZNew(temparena.get(), SECKEYEncryptedPrivateKeyInfo);
+-  if (!epki) {
+-    return SECFailure;
+-  }
+-
+-  SECStatus rv = SEC_ASN1DecodeItem(
+-      temparena.get(), epki,
+-      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(nullptr, false), derPKI);
+-  if (rv != SECSuccess) {
+-    // If SEC_ASN1DecodeItem fails, we cannot assume anything about the
+-    // validity of the data in epki. The best we can do is free the arena
+-    // and return.
+-    return rv;
+-  }
+-
+-  // See comment in WrapPrivateKeyInfoWithEmptyPassword about this
+-  // dummy password stuff.
+-  SECItem dummyPassword = {siBuffer, nullptr, 0};
+-  return PK11_ImportEncryptedPrivateKeyInfoAndReturnKey(
+-      slot.get(), epki, &dummyPassword, nullptr, publicValue, false, false,
+-      publicKey->keyType, KU_ALL, privk, nullptr);
+-}
+-
+-nsresult DtlsIdentity::Serialize(nsTArray<uint8_t>* aKeyDer,
+-                                 nsTArray<uint8_t>* aCertDer) {
+-  ScopedSECItem derPki(WrapPrivateKeyInfoWithEmptyPassword(private_key_.get()));
+-  if (!derPki) {
+-    return NS_ERROR_FAILURE;
+-  }
+-
+-  aKeyDer->AppendElements(derPki->data, derPki->len);
+-  aCertDer->AppendElements(cert_->derCert.data, cert_->derCert.len);
++nsresult DtlsIdentity::Serialize(nsTArray<uint8_t>& certFingerprint) {
++  certFingerprint = cert_fingerprint_;
+   return NS_OK;
+ }
+ 
+ /* static */
+ RefPtr<DtlsIdentity> DtlsIdentity::Deserialize(
+-    const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+-    SSLKEAType authType) {
+-  SECItem certDer = {siBuffer, const_cast<uint8_t*>(aCertDer.Elements()),
+-                     static_cast<unsigned int>(aCertDer.Length())};
+-  UniqueCERTCertificate cert(CERT_NewTempCertificate(
+-      CERT_GetDefaultCertDB(), &certDer, nullptr, true, true));
+-
+-  SECItem derPKI = {siBuffer, const_cast<uint8_t*>(aKeyDer.Elements()),
+-                    static_cast<unsigned int>(aKeyDer.Length())};
+-
+-  SECKEYPrivateKey* privateKey;
+-  if (UnwrapPrivateKeyInfoWithEmptyPassword(&derPKI, cert, &privateKey) !=
+-      SECSuccess) {
+-    MOZ_ASSERT(false);
+-    return nullptr;
+-  }
+-
+-  return new DtlsIdentity(UniqueSECKEYPrivateKey(privateKey), std::move(cert),
+-                          authType);
++    const nsTArray<uint8_t>& certFingerprint, SSLKEAType authType) {
++  return new DtlsIdentity(dom::CertFingerprint(certFingerprint), authType);
+ }
+ 
+ RefPtr<DtlsIdentity> DtlsIdentity::Generate() {
+@@ -283,7 +166,7 @@ RefPtr<DtlsIdentity> DtlsIdentity::Gener
+ 
+ constexpr nsLiteralCString DtlsIdentity::DEFAULT_HASH_ALGORITHM;
+ 
+-nsresult DtlsIdentity::ComputeFingerprint(DtlsDigest* digest) const {
++nsresult DtlsIdentity::ComputeFingerprint(DtlsDigest* digest) {
+   const UniqueCERTCertificate& c = cert();
+   MOZ_ASSERT(c);
+ 
+@@ -328,4 +211,28 @@ nsresult DtlsIdentity::ComputeFingerprin
+   return NS_OK;
+ }
+ 
++const UniqueCERTCertificate& DtlsIdentity::cert() {
++  if (!cert_) {
++    dom::GeneratedCertificate* genCert =
++        dom::RTCCertCache::LookupCert(cert_fingerprint_);
++    if (genCert) {
++      cert_ = UniqueCERTCertificate(
++          CERT_DupCertificate(genCert->mCertificate.get()));
++    }
++  }
++  return cert_;
++}
++
++const UniqueSECKEYPrivateKey& DtlsIdentity::privkey() {
++  if (!private_key_) {
++    dom::GeneratedCertificate* genCert =
++        dom::RTCCertCache::LookupCert(cert_fingerprint_);
++    if (genCert) {
++      private_key_ = UniqueSECKEYPrivateKey(
++          SECKEY_CopyPrivateKey(genCert->mPrivateKey.get()));
++    }
++  }
++  return private_key_;
++}
++
+ }  // namespace mozilla
+diff -up firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h.webrtc firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h
+--- firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h.webrtc	2024-08-26 16:23:35.000000000 +0200
++++ firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h	2024-09-30 21:41:07.651369147 +0200
+@@ -10,6 +10,7 @@
+ #include <vector>
+ 
+ #include "ScopedNSSTypes.h"
++#include "mozilla/dom/RTCCertCache.h"
+ #include "m_cpp_utils.h"
+ #include "mozilla/RefPtr.h"
+ #include "nsISupportsImpl.h"
+@@ -58,14 +59,15 @@ class DtlsIdentity final {
+       : private_key_(std::move(privkey)),
+         cert_(std::move(cert)),
+         auth_type_(authType) {}
++  DtlsIdentity(dom::CertFingerprint certFingerprint, SSLKEAType authType)
++      : cert_fingerprint_(certFingerprint), auth_type_(authType) {}
+ 
+   // Allows serialization/deserialization; cannot write IPC serialization code
+   // directly for DtlsIdentity, since IPC-able types need to be constructable
+   // on the stack.
+-  nsresult Serialize(nsTArray<uint8_t>* aKeyDer, nsTArray<uint8_t>* aCertDer);
+-  static RefPtr<DtlsIdentity> Deserialize(const nsTArray<uint8_t>& aKeyDer,
+-                                          const nsTArray<uint8_t>& aCertDer,
+-                                          SSLKEAType authType);
++  nsresult Serialize(nsTArray<uint8_t>& certFingerprint);
++  static RefPtr<DtlsIdentity> Deserialize(
++      const nsTArray<uint8_t>& certFingerprint, SSLKEAType authType);
+ 
+   // This is only for use in tests, or for external linkage.  It makes a (bad)
+   // instance of this class.
+@@ -73,15 +75,15 @@ class DtlsIdentity final {
+ 
+   // These don't create copies or transfer ownership. If you want these to live
+   // on, make a copy.
+-  const UniqueCERTCertificate& cert() const { return cert_; }
+-  const UniqueSECKEYPrivateKey& privkey() const { return private_key_; }
++  const UniqueCERTCertificate& cert();
++  const UniqueSECKEYPrivateKey& privkey();
+   // Note: this uses SSLKEAType because that is what the libssl API requires.
+   // This is a giant confusing mess, but libssl indexes certificates based on a
+   // key exchange type, not authentication type (as you might have reasonably
+   // expected).
+   SSLKEAType auth_type() const { return auth_type_; }
+ 
+-  nsresult ComputeFingerprint(DtlsDigest* digest) const;
++  nsresult ComputeFingerprint(DtlsDigest* digest);
+   static nsresult ComputeFingerprint(const UniqueCERTCertificate& cert,
+                                      DtlsDigest* digest);
+ 
+@@ -94,6 +96,7 @@ class DtlsIdentity final {
+   ~DtlsIdentity() = default;
+   DISALLOW_COPY_ASSIGN(DtlsIdentity);
+ 
++  dom::CertFingerprint cert_fingerprint_;
+   UniqueSECKEYPrivateKey private_key_;
+   UniqueCERTCertificate cert_;
+   SSLKEAType auth_type_;
+diff -up firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp.webrtc firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp
+--- firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp.webrtc	2024-08-26 16:23:36.000000000 +0200
++++ firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp	2024-09-30 21:41:07.651369147 +0200
+@@ -57,6 +57,7 @@
+ #include "mozilla/dom/quota/QuotaParent.h"
+ #include "mozilla/dom/simpledb/ActorsParent.h"
+ #include "mozilla/dom/VsyncParent.h"
++#include "mozilla/dom/PRTCCertServiceTransactionParent.h"
+ #include "mozilla/ipc/BackgroundParent.h"
+ #include "mozilla/ipc/BackgroundUtils.h"
+ #include "mozilla/ipc/Endpoint.h"
+diff -up firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.webrtc firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp
+--- firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.webrtc	2024-08-26 16:23:42.000000000 +0200
++++ firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp	2024-09-30 21:41:07.651369147 +0200
+@@ -197,13 +197,15 @@ class LoopbackTransport : public MediaTr
+                          // this up internally
+                          const nsTArray<NrIceStunAddr>& aStunAddrs) override {}
+ 
+-  void ActivateTransport(
+-      const std::string& aTransportId, const std::string& aLocalUfrag,
+-      const std::string& aLocalPwd, size_t aComponentCount,
+-      const std::string& aUfrag, const std::string& aPassword,
+-      const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+-      SSLKEAType aAuthType, bool aDtlsClient, const DtlsDigestList& aDigests,
+-      bool aPrivacyRequested) override {}
++  void ActivateTransport(const std::string& aTransportId,
++                         const std::string& aLocalUfrag,
++                         const std::string& aLocalPwd, size_t aComponentCount,
++                         const std::string& aUfrag,
++                         const std::string& aPassword,
++                         const nsTArray<uint8_t>& aCertFingerprint,
++                         SSLKEAType aAuthType, bool aDtlsClient,
++                         const DtlsDigestList& aDigests,
++                         bool aPrivacyRequested) override {}
+ 
+   void RemoveTransportsExcept(
+       const std::set<std::string>& aTransportIds) override {}
+diff -up firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl.webrtc firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl
+--- firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl.webrtc	2024-08-26 16:23:42.000000000 +0200
++++ firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl	2024-09-30 21:41:07.651369147 +0200
+@@ -10,6 +10,8 @@ include protocol PBackgroundDataBridge;
+ include protocol PMediaTransport;
+ #endif // MOZ_WEBRTC
+ 
++include protocol PRTCCertServiceTransaction;
++
+ 
+ namespace mozilla {
+ namespace net {
+@@ -42,6 +44,7 @@ parent:
+   async InitMediaTransport(Endpoint<PMediaTransportParent> aEndpoint);
+ #endif // MOZ_WEBRTC
+ 
++  async InitRTCCertServiceTransaction(Endpoint<PRTCCertServiceTransactionParent> aEndpoint);
+ };
+ 
+ }
+diff -up firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp.webrtc firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp
+--- firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp.webrtc	2024-08-26 16:23:43.000000000 +0200
++++ firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp	2024-09-30 21:41:07.651369147 +0200
+@@ -9,6 +9,7 @@
+ #ifdef MOZ_WEBRTC
+ #  include "mozilla/dom/MediaTransportParent.h"
+ #endif
++#include "mozilla/dom/RTCCertServiceParent.h"
+ #include "mozilla/ipc/BackgroundParent.h"
+ #include "mozilla/ipc/Endpoint.h"
+ #include "SocketProcessChild.h"
+@@ -83,6 +84,37 @@ mozilla::ipc::IPCResult SocketProcessBri
+ }
+ #endif
+ 
++mozilla::ipc::IPCResult
++SocketProcessBridgeParent::RecvInitRTCCertServiceTransaction(
++    mozilla::ipc::Endpoint<mozilla::dom::PRTCCertServiceTransactionParent>&&
++        aEndpoint) {
++  LOG(("SocketProcessBridgeParent::RecvInitRTCCertServiceTransaction\n"));
++
++  if (!aEndpoint.IsValid()) {
++    return IPC_FAIL(this, "Invalid endpoint");
++  }
++
++  if (!mMediaTransportTaskQueue) {
++    nsCOMPtr<nsISerialEventTarget> transportQueue;
++    if (NS_FAILED(NS_CreateBackgroundTaskQueue(
++            "MediaTransport", getter_AddRefs(transportQueue)))) {
++      return IPC_FAIL(this, "NS_CreateBackgroundTaskQueue failed");
++    }
++
++    mMediaTransportTaskQueue = std::move(transportQueue);
++  }
++
++  mMediaTransportTaskQueue->Dispatch(
++      NS_NewRunnableFunction("BackgroundDataBridgeParent::Bind",
++                             [endpoint = std::move(aEndpoint)]() mutable {
++                               RefPtr<dom::RTCCertServiceParent> actor =
++                                   new dom::RTCCertServiceParent();
++                               endpoint.Bind(actor);
++                             }));
++
++  return IPC_OK();
++}
++
+ void SocketProcessBridgeParent::ActorDestroy(ActorDestroyReason aReason) {
+   // See bug 1846478. We might be able to remove this dispatch.
+   GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+diff -up firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h.webrtc firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h
+--- firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h.webrtc	2024-08-26 16:23:43.000000000 +0200
++++ firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h	2024-09-30 21:41:07.651369147 +0200
+@@ -29,6 +29,9 @@ class SocketProcessBridgeParent final :
+       Endpoint<PMediaTransportParent>&& aEndpoint);
+ #endif
+ 
++  mozilla::ipc::IPCResult RecvInitRTCCertServiceTransaction(
++      Endpoint<PRTCCertServiceTransactionParent>&& aEndpoint);
++
+   void ActorDestroy(ActorDestroyReason aReason) override;
+ 
+  private:
+diff -up firefox-128.2.0/third_party/libwebrtc/examples/androidtests/third_party/README.webrtc firefox-128.2.0/third_party/libwebrtc/examples/androidtests/third_party/README

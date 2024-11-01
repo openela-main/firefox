@@ -1,0 +1,224 @@
+diff --git a/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c b/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
+--- a/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
++++ b/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
+@@ -54,10 +54,11 @@
+ #include "crypto_types.h"
+ #include "cipher_types.h"
+ #include "cipher_test_cases.h"
+ #include <secerr.h>
+ #include <nspr.h>
++#include "nss_fips.h"
+ 
+ srtp_debug_module_t srtp_mod_aes_gcm = {
+     0,            /* debugging is off by default */
+     "aes gcm nss" /* printable module name       */
+ };
+@@ -211,12 +212,17 @@
+     if (!slot) {
+         return (srtp_err_status_cipher_fail);
+     }
+ 
+     SECItem key_item = { siBuffer, (unsigned char *)key, c->key_size };
+-    c->key = PK11_ImportSymKey(slot, CKM_AES_GCM, PK11_OriginUnwrap,
+-                               CKA_ENCRYPT, &key_item, NULL);
++    if (PK11_IsFIPS()) {
++      c->key = PK11_ImportSymKey_FIPS(slot, CKM_AES_GCM, PK11_OriginUnwrap,
++                                 CKA_ENCRYPT, &key_item, NULL);
++    } else {
++      c->key = PK11_ImportSymKey(slot, CKM_AES_GCM, PK11_OriginUnwrap,
++                                 CKA_ENCRYPT, &key_item, NULL);
++    }
+     PK11_FreeSlot(slot);
+ 
+     if (!c->key) {
+         return (srtp_err_status_cipher_fail);
+     }
+diff --git a/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c b/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c
+--- a/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c
++++ b/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c
+@@ -51,10 +51,11 @@
+ #include "crypto_types.h"
+ #include "err.h" /* for srtp_debug */
+ #include "alloc.h"
+ #include "cipher_types.h"
+ #include "cipher_test_cases.h"
++#include "nss_fips.h"
+ 
+ srtp_debug_module_t srtp_mod_aes_icm = {
+     0,            /* debugging is off by default */
+     "aes icm nss" /* printable module name       */
+ };
+@@ -252,12 +253,17 @@
+     if (!slot) {
+         return srtp_err_status_bad_param;
+     }
+ 
+     SECItem keyItem = { siBuffer, (unsigned char *)key, c->key_size };
+-    c->key = PK11_ImportSymKey(slot, CKM_AES_CTR, PK11_OriginUnwrap,
+-                               CKA_ENCRYPT, &keyItem, NULL);
++    if (PK11_IsFIPS()) {
++      c->key = PK11_ImportSymKey_FIPS(slot, CKM_AES_CTR, PK11_OriginUnwrap,
++                                 CKA_ENCRYPT, &keyItem, NULL);
++    } else {
++      c->key = PK11_ImportSymKey(slot, CKM_AES_CTR, PK11_OriginUnwrap,
++                                 CKA_ENCRYPT, &keyItem, NULL);
++    }
+     PK11_FreeSlot(slot);
+ 
+     if (!c->key) {
+         return srtp_err_status_cipher_fail;
+     }
+diff --git a/third_party/libsrtp/src/crypto/include/nss_fips.h b/third_party/libsrtp/src/crypto/include/nss_fips.h
+new file mode 100644
+--- /dev/null
++++ b/third_party/libsrtp/src/crypto/include/nss_fips.h
+@@ -0,0 +1,148 @@
++/*
++ * Copyright (c) 2024, Red Hat, Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ *   Redistributions of source code must retain the above copyright
++ *   notice, this list of conditions and the following disclaimer.
++ *
++ *   Redistributions in binary form must reproduce the above
++ *   copyright notice, this list of conditions and the following
++ *   disclaimer in the documentation and/or other materials provided
++ *   with the distribution.
++ *
++ *   Neither the name of the Red Hat, Inc. nor the names of its
++ *   contributors may be used to endorse or promote products derived
++ *   from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
++ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
++ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
++ * OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++/*
++  Adapted from Red Hat Ceph patch by
++  Radoslaw Zarzynski <rzarzyns@redhat.com>
++
++  PK11_ImportSymKey() is a part of NSS API that becomes unavailable
++  in the FIPS mode. Apparently NSS targets stricter restrictions
++  than those coming from Level 1 of FIPS 140-2. In the consequence,
++  loading a symmetric key from plain keyring or key db fails.
++
++  A raw crypto key is in-memory wrapped with fresh, random wrapping
++  key just before being imported via PK11_UnwrapSymKey(). Of course,
++  this effectively lowers to FIPS level 1. Still, this would be no
++  different from what OpenSSL gives in the matter.
++*/
++
++#ifndef NSS_FIPS_H
++#define NSS_FIPS_H
++
++static PK11SymKey *PK11_ImportSymKey_FIPS(
++    PK11SlotInfo * const slot,
++    const CK_MECHANISM_TYPE type,
++    const PK11Origin origin,
++    const CK_ATTRIBUTE_TYPE operation,
++    SECItem * const raw_key,
++    void * const wincx)
++{
++  PK11SymKey* wrapping_key = NULL;
++  PK11Context *wrap_key_crypt_context = NULL;
++  SECItem *raw_key_aligned = NULL;
++  CK_MECHANISM_TYPE wrap_mechanism = 0;
++
++  struct {
++    unsigned char data[256];
++    int len;
++  } wrapped_key;
++
++  #define SCOPE_DATA_FREE()                               \
++  {                                                       \
++    PK11_FreeSymKey(wrapping_key);                        \
++    PK11_DestroyContext(wrap_key_crypt_context, PR_TRUE); \
++    SECITEM_FreeItem(raw_key_aligned, PR_TRUE);           \
++  }
++
++  if(raw_key->len > sizeof(wrapped_key.data)) {
++    return NULL;
++  }
++
++  // getting 306 on my system which is CKM_DES3_ECB.
++  wrap_mechanism = PK11_GetBestWrapMechanism(slot);
++
++  // Generate a wrapping key. It will be used exactly twice over the scope:
++  //   * to encrypt raw_key giving wrapped_key,
++  //   * to decrypt wrapped_key in the internals of PK11_UnwrapSymKey().
++  wrapping_key = PK11_KeyGen(slot, wrap_mechanism, NULL,
++                             PK11_GetBestKeyLength(slot, wrap_mechanism), NULL);
++  if (wrapping_key == NULL) {
++    return NULL;
++  }
++
++  // Prepare a PK11 context for the raw_key -> wrapped_key encryption.
++  SECItem tmp_sec_item;
++  memset(&tmp_sec_item, 0, sizeof(tmp_sec_item));
++  wrap_key_crypt_context = PK11_CreateContextBySymKey(
++   wrap_mechanism,
++   CKA_ENCRYPT,
++   wrapping_key,
++   &tmp_sec_item);
++  if (wrap_key_crypt_context == NULL) {
++    SCOPE_DATA_FREE();
++    return NULL;
++  }
++
++  // Finally wrap the key. Important note is that the wrapping mechanism
++  // selection (read: just grabbing a cipher) offers, at least in my NSS
++  // copy, mostly CKM_*_ECB ciphers (with 3DES as the leading one, see
++  // wrapMechanismList[] in pk11mech.c). There is no CKM_*_*_PAD variant
++  // which means that plaintext we are providing to PK11_CipherOp() must
++  // be aligned to cipher's block size. For 3DES it's 64 bits.
++  raw_key_aligned = PK11_BlockData(raw_key, PK11_GetBlockSize(wrap_mechanism, NULL));
++  if (raw_key_aligned == NULL) {
++    SCOPE_DATA_FREE();
++    return NULL;
++  }
++
++  if (PK11_CipherOp(wrap_key_crypt_context, wrapped_key.data, &wrapped_key.len,
++      sizeof(wrapped_key.data), raw_key_aligned->data,
++      raw_key_aligned->len) != SECSuccess) {
++    SCOPE_DATA_FREE();
++    return NULL;
++  }
++
++  if (PK11_Finalize(wrap_key_crypt_context) != SECSuccess) {
++    SCOPE_DATA_FREE();
++    return NULL;
++  }
++
++  // Key is wrapped now so we can acquire the ultimate PK11SymKey through
++  // unwrapping it. Of course these two opposite operations form NOP with
++  // a side effect: FIPS level 1 compatibility.
++  memset(&tmp_sec_item, 0, sizeof(tmp_sec_item));
++
++  SECItem wrapped_key_item;
++  memset(&wrapped_key_item, 0, sizeof(wrapped_key_item));
++  wrapped_key_item.data = wrapped_key.data;
++  wrapped_key_item.len = wrapped_key.len;
++
++  PK11SymKey *ret = PK11_UnwrapSymKey(wrapping_key, wrap_mechanism,
++                                      &tmp_sec_item, &wrapped_key_item, type,
++                                      operation, raw_key->len);
++  SCOPE_DATA_FREE();
++  return ret;
++ }
++
++#endif // NSS_FIPS_H
+
