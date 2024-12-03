@@ -12,6 +12,9 @@
 %global run_firefox_tests 0
 %endif
 
+# wasi_sdk is for sandboxing third party c/c++ libs by using rlbox, exclude s390x on the f39.
+%bcond_with wasi_sdk
+
 %{lua:
 function dist_to_rhel_minor(str, start)
   match = string.match(str, ".module%+el8.%d+")
@@ -36,7 +39,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el9")
   if match then
-     return 5
+     return 6
   end
   match = string.match(str, ".el10_%d+")
   if match then
@@ -56,21 +59,30 @@ end}
 %global bundle_nss        0
 
 %if 0%{?rhel} == 7
-%global bundle_nss        0
-%global system_nss        0
+  %global bundle_nss               0
+  %global system_nss               0
 %endif
+
 %if 0%{?rhel} == 8
   %if %{rhel_minor_version} < 8
     %global bundle_nss        1
     %global system_nss        1
   %endif
+  %if %{rhel_minor_version} >= 10
+    %global with_wasi_sdk 1
+  %endif
 %endif
+
 %if 0%{?rhel} == 9
   %if %{rhel_minor_version} < 2
     %global bundle_nss        1
     %global system_nss        1
   %endif
+  %if %{rhel_minor_version} > 5
+    %global with_wasi_sdk 1
+  %endif
 %endif
+
 
 %global dts_version       11
 %global llvm_version      7.0
@@ -137,7 +149,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.4.0
+Version:              128.5.1
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -168,7 +180,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20241022.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20241202.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -189,6 +201,11 @@ Source34:             firefox-search-provider.ini
 Source35:             google-loc-api-key
 Source36:             testing.sh
 Source37:             mochitest-python.tar.gz
+Source38:             wasi.patch.template
+# Created by:
+# git clone --recursive https://github.com/WebAssembly/wasi-sdk.git
+# cd wasi-sdk && git-archive-all --force-submodules wasi-sdk-20.tar.gz
+Source50:             wasi-sdk-20.tar.gz
 
 # Bundled libraries
 Source401:            nss-setup-flags-env.inc
@@ -240,7 +257,7 @@ Patch155:             rhbz-1354671.patch
 Patch200:             webrtc-128.0.patch.patch
 Patch201:             D224587.1728128070.diff
 Patch202:             D224588.1728128098.diff
-
+Patch203:             wasi.patch
 
 # ---- Test patches ----
 # Generate without context by
@@ -357,6 +374,11 @@ BuildRequires:        psmisc
 BuildRequires:        sqlite-devel
 BuildRequires:        xmlto
 BuildRequires:        zlib-devel
+%endif
+
+%if %{with wasi_sdk}
+BuildRequires:        lld
+BuildRequires:        clang cmake ninja-build
 %endif
 
 %if !0%{?flatpak}
@@ -1123,9 +1145,14 @@ echo "system_nss          %{?system_nss}"
 echo "use_dts             %{?use_dts}"
 echo "use_nodejs_scl      %{?use_nodejs_scl}"
 echo "use_python3_scl     %{?use_python3_scl}"
+echo "with_wasi_sdk       %{?with_wasi_sdk}"
 echo "--------------------------------------------"
 #clang -print-search-dirs
 %setup -q -n %{name}-%{version}
+
+%if %{with wasi_sdk}
+%setup -q -T -D -a 50
+%endif
 
 # ---- RHEL specific patches ---
 # -- Downstream only --
@@ -1151,6 +1178,12 @@ echo "--------------------------------------------"
 %endif
 %patch -P9 -p1 -b .rhbz-2131158-webrtc-nss-fix
 %patch -P10 -p1 -b .build-ffvpx
+
+# We need to create the wasi.patch with the correct path to the wasm libclang_rt.
+%if %{with wasi_sdk}
+export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.builtins-wasm32.a; cat %{SOURCE38} | envsubst > %{_sourcedir}/wasi.patch
+%patch -P203 -p1 -b .wasi
+%endif
 
 # -- Upstreamed patches --
 %patch -P51 -p1 -b .mozilla-bmo1170092
@@ -1182,7 +1215,6 @@ echo "--------------------------------------------"
 %patch -P201 -p1 -b .D224587
 %patch -P202 -p1 -b .D224588
 %endif
-
 
 # ---- Security patches ----
 
@@ -1264,6 +1296,13 @@ echo "ac_add_options --with-google-safebrowsing-api-keyfile=`pwd`/google-api-key
 # Clang 17 upstream's detection fails, tell it where to look.
 echo "ac_add_options --with-libclang-path=`llvm-config --libdir`" >> .mozconfig
 
+%if %{with wasi_sdk}
+echo "ac_add_options --with-wasi-sysroot=`pwd`/wasi-sdk-20/build/install/opt/wasi-sdk/share/wasi-sysroot" >> .mozconfig
+%else
+echo "ac_add_options --without-sysroot" >> .mozconfig
+echo "ac_add_options --without-wasm-sandboxed-libraries" >> .mozconfig
+%endif
+
 echo 'export NODEJS="%{_buildrootdir}/bin/node-stdout-nonblocking-wrapper"' >> .mozconfig
 
 # Remove executable bit to make brp-mangle-shebangs happy.
@@ -1278,6 +1317,15 @@ chmod a-x third_party/rust/ash/src/extensions/nv/*.rs
 # TODO: causes SIGSEGV on the webrender compilation, we might remove it with newer rust version
 # Disable LTO to work around rhbz#1883904
 %define _lto_cflags %{nil}
+
+#WASI SDK
+%if %{with wasi_sdk}
+pushd wasi-sdk-20
+sed -i -e "s|VERSION=.*|VERSION=20|g" tar_from_installation.sh
+cat tar_from_installation.sh
+NINJA_FLAGS=-v CC=clang CXX=clang++ env -u CFLAGS -u CXXFLAGS -u FFLAGS -u VALFLAGS -u RUSTFLAGS -u LDFLAGS -u LT_SYS_LIBRARY_PATH make package
+popd
+%endif
 
 export PATH="%{_buildrootdir}/bin:$PATH"
 # Cleanup buildroot for existing rpms from bundled nss/nspr and other packages
@@ -1871,9 +1919,15 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Fri Nov 01 2024 Release Engineering <releng@openela.org> - 128.4.0
+* Tue Dec 03 2024 Release Engineering <releng@openela.org> - 128.5.1
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Mon Dec 02 2024 Eike Rathke <erack@redhat.com> - 128.5.1-1
+- Update to 128.5.1
+
+* Tue Nov 19 2024 Eike Rathke <erack@redhat.com> - 128.5.0-1
+- Update to 128.5.0 build1
 
 * Tue Oct 22 2024 Eike Rathke <erack@redhat.com> - 128.4.0-1
 - Update to 128.4.0 build1

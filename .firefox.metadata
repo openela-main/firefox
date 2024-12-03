@@ -1,6 +1,7 @@
+cee8941907f9979186db26f083fb96b626c03ac4aa6fbc233792d55cd55fb36f SOURCES/wasi-sdk-20.tar.gz
 3df8592c69866a0edf78b4153ce78e214f1b1a9474b28b1f860f4a52ca81c1d6 SOURCES/cbindgen-vendor.tar.xz
-91cc6f36d57de56e9985fe0fa885d5b9a0cb23c60723b3c765667188dac9564c SOURCES/firefox-128.4.0esr.processed-source.tar.xz
-8aef415cacf0c9414a10e8e3101d8fbb82fbf112072b4fcca6ef4ec929c02fae SOURCES/firefox-langpacks-128.4.0esr-20241022.tar.xz
+9a9849fc284cde20c336102ddfa0b79d20440bc1d0b45dea41c79bacdd3af4d8 SOURCES/firefox-128.5.1esr.processed-source.tar.xz
+e67d3b8033dd1a37a1df1d37fd451f30b8540805852b3647f196fb419047a2ea SOURCES/firefox-langpacks-128.5.1esr-20241202.tar.xz
 f4abd35df3b5966a435610e010dbc637e5fc36c407c2563f80b5c08be3138adc SOURCES/mochitest-python.tar.gz
 cacda79c00fe7518691347a8d4238b05849c7d27ae4950c58144f4fefa2257cd SOURCES/nss-3.101.0-7.el8_2.src.rpm
 1a821c113c09ba2209e0096b0b2553695c6685d1efe2fac68d5dfadc31470abd SOURCES/nss-3.101.0-7.el9_2.src.rpm

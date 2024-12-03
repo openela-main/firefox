@@ -1,0 +1,12 @@
+diff -up firefox-121.0.1/toolkit/moz.configure.wasi firefox-121.0.1/toolkit/moz.configure
+--- firefox-121.0.1/toolkit/moz.configure.wasi	2024-02-01 09:14:33.816548952 +0100
++++ firefox-121.0.1/toolkit/moz.configure	2024-02-01 09:15:53.264684309 +0100
+@@ -2663,7 +2663,7 @@ with only_when(requires_wasm_sandboxing
+     def wasi_sysroot_flags(wasi_sysroot):
+         if wasi_sysroot:
+             log.info("Using wasi sysroot in %s", wasi_sysroot)
+-            return ["--sysroot=%s" % wasi_sysroot]
++            return ["--sysroot=%s" % wasi_sysroot, "-nodefaultlibs",  "-lc", "-lwasi-emulated-process-clocks", "-lc++", "-lc++abi", "$LIBCLANG_RT"]
+         return []
+ 
+     set_config("WASI_SYSROOT", wasi_sysroot)
