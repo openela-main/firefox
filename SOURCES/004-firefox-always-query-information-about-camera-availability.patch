@@ -1,0 +1,52 @@
+From b10c1d09729794c46f9c04d04c07c18d514d396e Mon Sep 17 00:00:00 2001
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Wed, 4 Sep 2024 13:43:29 +0000
+Subject: [PATCH] Bug 1912785 - Always query information about camera
+ availability r=pehrsons
+
+We have to always update camera availability information, even when we
+don't request cameras, because the WebRTC backend automatically creates
+camera video engine and not having this information we might hitting an
+assert later, where we assume the status of camera availability is not
+unknown.
+
+Differential Revision: https://phabricator.services.mozilla.com/D219062
+---
+ dom/media/MediaManager.cpp | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/dom/media/MediaManager.cpp b/dom/media/MediaManager.cpp
+index 2ade297d31e84..3cc716e6836ac 100644
+--- a/dom/media/MediaManager.cpp
++++ b/dom/media/MediaManager.cpp
+@@ -2153,9 +2153,15 @@ MediaManager::MaybeRequestPermissionAndEnumerateRawDevices(
+   }
+ 
+   if (!deviceAccessPromise) {
+-    // No device access request needed. Proceed directly.
+-    deviceAccessPromise =
+-        NativePromise::CreateAndResolve(CamerasAccessStatus::Granted, __func__);
++    // No device access request needed. We can proceed directly, but we still
++    // need to update camera availability, because the camera engine is always
++    // created together with the WebRTC backend, which is done because
++    // devicechange events must work before prompting in cases where persistent
++    // permission has already been given. Making a request to camera access not
++    // allowing a permission request does exactly what we need in this case.
++    ipc::PBackgroundChild* backgroundChild =
++        ipc::BackgroundChild::GetOrCreateForCurrentThread();
++    deviceAccessPromise = backgroundChild->SendRequestCameraAccess(false);
+   }
+ 
+   return deviceAccessPromise->Then(
+@@ -2190,8 +2196,9 @@ MediaManager::MaybeRequestPermissionAndEnumerateRawDevices(
+               "rejected");
+         }
+ 
+-        if (aParams.mFlags.contains(EnumerationFlag::AllowPermissionRequest)) {
+-          MOZ_ASSERT(aValue.ResolveValue() == CamerasAccessStatus::Granted);
++        if (aParams.VideoInputType() == MediaSourceEnum::Camera &&
++            aParams.mFlags.contains(EnumerationFlag::AllowPermissionRequest) &&
++            aValue.ResolveValue() == CamerasAccessStatus::Granted) {
+           EnsureNoPlaceholdersInDeviceCache();
+         }
+ 
