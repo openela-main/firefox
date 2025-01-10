@@ -13,7 +13,8 @@
 %endif
 
 # wasi_sdk is for sandboxing third party c/c++ libs by using rlbox, exclude s390x on the f39.
-%bcond_with wasi_sdk
+
+%global with_wasi_sdk 0
 
 %{lua:
 function dist_to_rhel_minor(str, start)
@@ -54,6 +55,12 @@ end}
 
 %global rhel_minor_version %{lua:print(dist_to_rhel_minor(rpm.expand("%dist")))}
 
+%if 0%{?rhel} == 10
+%global use_pipewire_camera 1
+%else
+%global use_pipewire_camera 0
+%endif
+
 # System libraries options
 %global system_nss        1
 %global bundle_nss        0
@@ -69,7 +76,9 @@ end}
     %global system_nss        1
   %endif
   %if %{rhel_minor_version} >= 10
-    %global with_wasi_sdk 1
+    %ifnarch s390x
+      %global with_wasi_sdk 1
+    %endif
   %endif
 %endif
 
@@ -79,7 +88,9 @@ end}
     %global system_nss        1
   %endif
   %if %{rhel_minor_version} > 5
-    %global with_wasi_sdk 1
+    %ifnarch s390x
+      %global with_wasi_sdk 1
+    %endif
   %endif
 %endif
 
@@ -149,7 +160,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.5.1
+Version:              128.6.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -180,7 +191,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20241202.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20241218.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -226,6 +237,7 @@ Patch08:              disable-pipewire.patch
 Patch09:              rhbz-2131158-webrtc-nss-fix.patch
 Patch10:              build-ffvpx.patch
 Patch11:              build-disable-gamepad.patch
+Patch12:              firefox-system-nss-replace-xyber-with-mlkem.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
@@ -258,6 +270,28 @@ Patch200:             webrtc-128.0.patch.patch
 Patch201:             D224587.1728128070.diff
 Patch202:             D224588.1728128098.diff
 Patch203:             wasi.patch
+
+# --- Upstream PipeWire camera and screencast fixes ----
+# https://phabricator.services.mozilla.com/D215197
+Patch250:             001-libwebrtc-pipewire-screencast-hide-cursor-when-goes-off-screen-or-is-invisible.patch
+# https://phabricator.services.mozilla.com/D216138
+Patch251:             002-libwebrtc-pipewire-camera-support-additional-formats-and-fix-rgb-bgr-mapping.patch
+# https://phabricator.services.mozilla.com/D219224
+Patch252:             003-libwebrtc-pipewire-camera-filter-out-devices-without-capabilities.patch
+# https://phabricator.services.mozilla.com/D219062
+Patch253:             004-firefox-always-query-information-about-camera-availability.patch
+# https://phabricator.services.mozilla.com/D219060
+Patch254:             005-firefox-always-register-video-input-feedback-for-newly-created-deviceinfo.patch
+# https://phabricator.services.mozilla.com/D220895
+Patch255:             006-libwebrtc-pipewire-camera-make-member-variable-with-pipewire-status-updated.patch
+# https://phabricator.services.mozilla.com/D219218
+Patch256:             007-firefox-add-missing-support-for-device-change-notifications.patch
+# https://phabricator.services.mozilla.com/D223112
+Patch257:             008-libwebrtc-pipewire-camera-get-max-fps-for-each-format-when-specified-as-list.patch
+# https://phabricator.services.mozilla.com/D223119
+Patch258:             009-libwebrtc-pipewire-camera-use-exact-stream-parameters-specified-by-capability.patch
+# https://phabricator.services.mozilla.com/D228635
+Patch259:             010-libwebrtc-pipewire-camera-use-better-unique-device-name-for-camera-devices.patch
 
 # ---- Test patches ----
 # Generate without context by
@@ -376,7 +410,7 @@ BuildRequires:        xmlto
 BuildRequires:        zlib-devel
 %endif
 
-%if %{with wasi_sdk}
+%if %{with_wasi_sdk}
 BuildRequires:        lld
 BuildRequires:        clang cmake ninja-build
 %endif
@@ -1150,7 +1184,7 @@ echo "--------------------------------------------"
 #clang -print-search-dirs
 %setup -q -n %{name}-%{version}
 
-%if %{with wasi_sdk}
+%if %{with_wasi_sdk}
 %setup -q -T -D -a 50
 %endif
 
@@ -1178,9 +1212,12 @@ echo "--------------------------------------------"
 %endif
 %patch -P9 -p1 -b .rhbz-2131158-webrtc-nss-fix
 %patch -P10 -p1 -b .build-ffvpx
+%if 0%{?rhel} == 10
+%patch -P12 -p1 -b .system-nss-replace-xyber-with-mlkem
+%endif
 
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
-%if %{with wasi_sdk}
+%if %{with_wasi_sdk}
 export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.builtins-wasm32.a; cat %{SOURCE38} | envsubst > %{_sourcedir}/wasi.patch
 %patch -P203 -p1 -b .wasi
 %endif
@@ -1214,6 +1251,20 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P200 -p1 -b .webrtc-128.0
 %patch -P201 -p1 -b .D224587
 %patch -P202 -p1 -b .D224588
+%endif
+
+# --- Upstream PipeWire camera and screencast fixes ----
+%if %{?use_pipewire_camera}
+%patch -P250 -p1 -b .pipewire-screencast-hide-cursor-when-goes-off-screen-or-is-invisible
+%patch -P251 -p1 -b .pipewire-camera-support-additional-formats-and-fix-rgb-bgr-mapping
+%patch -P252 -p1 -b .pipewire-camera-filter-out-devices-without-capabilities
+%patch -P253 -p1 -b .always-query-information-about-camera-availability
+%patch -P254 -p1 -b .always-register-video-input-feedback-for-newly-created-deviceinfo
+%patch -P255 -p1 -b .pipewire-camera-make-member-variable-with-pipewire-status-updated
+%patch -P256 -p1 -b .add-missing-support-for-device-change-notifications
+%patch -P257 -p1 -b .pipewire-camera-get-max-fps-for-each-format-when-specified-as-list
+%patch -P258 -p1 -b .pipewire-camera-use-exact-stream-parameters-specified-by-capability
+%patch -P259 -p1 -b .pipewire-camera-use-better-unique-device-name-for-camera-devices
 %endif
 
 # ---- Security patches ----
@@ -1296,7 +1347,7 @@ echo "ac_add_options --with-google-safebrowsing-api-keyfile=`pwd`/google-api-key
 # Clang 17 upstream's detection fails, tell it where to look.
 echo "ac_add_options --with-libclang-path=`llvm-config --libdir`" >> .mozconfig
 
-%if %{with wasi_sdk}
+%if %{with_wasi_sdk}
 echo "ac_add_options --with-wasi-sysroot=`pwd`/wasi-sdk-20/build/install/opt/wasi-sdk/share/wasi-sysroot" >> .mozconfig
 %else
 echo "ac_add_options --without-sysroot" >> .mozconfig
@@ -1319,7 +1370,7 @@ chmod a-x third_party/rust/ash/src/extensions/nv/*.rs
 %define _lto_cflags %{nil}
 
 #WASI SDK
-%if %{with wasi_sdk}
+%if %{with_wasi_sdk}
 pushd wasi-sdk-20
 sed -i -e "s|VERSION=.*|VERSION=20|g" tar_from_installation.sh
 cat tar_from_installation.sh
@@ -1778,6 +1829,11 @@ ln -s %{_datadir}/myspell %{buildroot}%{mozappdir}/dictionaries
 %{__cp} failures-* %{buildroot}/%{version}-%{release}/ || true
 %endif
 
+
+%if %{?use_pipewire_camera}
+echo 'pref("media.webrtc.camera.allow-pipewire", true);' >> %{buildroot}%{mozappdir}/defaults/preferences/all-redhat.js
+%endif
+
 # Add distribution.ini
 %{__mkdir_p} %{buildroot}%{mozappdir}/distribution
 %{__sed} -e "s/__NAME__/%(source /etc/os-release; echo ${NAME})/g" \
@@ -1919,15 +1975,23 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Tue Dec 03 2024 Release Engineering <releng@openela.org> - 128.5.1
+* Fri Jan 10 2025 Release Engineering <releng@openela.org> - 128.6.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Wed Dec 18 2024 Eike Rathke <erack@redhat.com> - 128.6.0-1
+- Update to 128.6.0 build1
 
 * Mon Dec 02 2024 Eike Rathke <erack@redhat.com> - 128.5.1-1
 - Update to 128.5.1
 
 * Tue Nov 19 2024 Eike Rathke <erack@redhat.com> - 128.5.0-1
 - Update to 128.5.0 build1
+
+* Mon Nov 18 2024 Jan Grulich <jgrulich@redhat.com - 128.4.0-2
+- Enable PipeWire camera support for RHEL 10
+  + backport upstream fixes for PipeWire camera support
+  Fixes: RHEL-64749
 
 * Tue Oct 22 2024 Eike Rathke <erack@redhat.com> - 128.4.0-1
 - Update to 128.4.0 build1

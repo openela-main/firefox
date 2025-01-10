@@ -1,0 +1,36 @@
+From 7dd135852be020d5755af42fa45470df259ba945 Mon Sep 17 00:00:00 2001
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Wed, 4 Sep 2024 13:43:40 +0000
+Subject: [PATCH] Bug 1830275 - WebRTC backport: PipeWire camera: make member
+ variable with the PipeWire status updated r=pehrsons,webrtc-reviewers
+
+We keep information about the PipeWire camera status as a member of the
+PipeWire session, but it's never updated and remains in uninitialized
+state. Make sure it gets updated once PipeWire is initialized or when it
+fails. There is currently no use for this member variable, but there is
+a plan to use it so I'm rather keeping it instead of removing it.
+
+This is a simple backport of an WebRTC upstream change.
+
+Upstream commit: 3881cb65cfcec90b6f0a56ce7223a471aa0115f2
+
+Differential Revision: https://phabricator.services.mozilla.com/D220895
+---
+ .../libwebrtc/modules/video_capture/linux/pipewire_session.cc   | 2 ++
+ .../libwebrtc/moz-patch-stack/3881cb65cf.no-op-cherry-pick-msg  | 1 +
+ 2 files changed, 3 insertions(+)
+ create mode 100644 third_party/libwebrtc/moz-patch-stack/3881cb65cf.no-op-cherry-pick-msg
+
+diff --git a/third_party/libwebrtc/modules/video_capture/linux/pipewire_session.cc b/third_party/libwebrtc/modules/video_capture/linux/pipewire_session.cc
+index dbac09274bb31..ac12d0437290e 100644
+--- a/third_party/libwebrtc/modules/video_capture/linux/pipewire_session.cc
++++ b/third_party/libwebrtc/modules/video_capture/linux/pipewire_session.cc
+@@ -415,6 +415,8 @@ void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
+ }
+ 
+ void PipeWireSession::Finish(VideoCaptureOptions::Status status) {
++  status_ = status;
++
+   webrtc::MutexLock lock(&callback_lock_);
+ 
+   if (callback_) {

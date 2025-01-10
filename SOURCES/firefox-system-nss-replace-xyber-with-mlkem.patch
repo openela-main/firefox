@@ -1,0 +1,507 @@
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+index 031ed0344d..4c652235d2 100644
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -13380,7 +13380,7 @@
+   mirror: always
+   rust: true
+ 
+-# Whether to send a Xyber768 key share in HTTP/3 TLS handshakes.
++# Whether to send an mlkem768x25519 key share in HTTP/3 TLS handshakes.
+ # Has no effect unless security.tls.enable_kyber is true.
+ - name: network.http.http3.enable_kyber
+   type: RelaxedAtomicBool
+diff --git a/netwerk/socket/neqo_glue/src/lib.rs b/netwerk/socket/neqo_glue/src/lib.rs
+index 9d1fa68ed2..216a95553c 100644
+--- a/netwerk/socket/neqo_glue/src/lib.rs
++++ b/netwerk/socket/neqo_glue/src/lib.rs
+@@ -202,7 +202,7 @@ impl NeqoHttp3Conn {
+         {
+             // These operations are infallible when conn.state == State::Init.
+             let _ = conn.set_groups(&[
+-                neqo_crypto::TLS_GRP_KEM_XYBER768D00,
++                neqo_crypto::TLS_GRP_KEM_MLKEM768X25519,
+                 neqo_crypto::TLS_GRP_EC_X25519,
+                 neqo_crypto::TLS_GRP_EC_SECP256R1,
+                 neqo_crypto::TLS_GRP_EC_SECP384R1,
+diff --git a/netwerk/test/unit/test_http3_kyber.js b/netwerk/test/unit/test_http3_kyber.js
+index 4b3f1cbc50..e3b77cce9b 100644
+--- a/netwerk/test/unit/test_http3_kyber.js
++++ b/netwerk/test/unit/test_http3_kyber.js
+@@ -62,7 +62,11 @@ function makeChan(uri) {
+ 
+ add_task(async function test_kyber_success() {
+   let listener = new Http3Listener();
+-  listener.expectedKeaGroup = "xyber768d00";
++  // Bug 1918532: change this from x25519 to mlkem768x25519.
++  // neqo_glue currently tries to negotiate xyber768d00, which is
++  // disabled by NSS policy. As such we expect to receive x25519
++  // here.
++  listener.expectedKeaGroup = "x25519";
+   let chan = makeChan("https://foo.example.com");
+   await chanPromise(chan, listener);
+ });
+diff --git a/security/manager/ssl/NSSSocketControl.cpp b/security/manager/ssl/NSSSocketControl.cpp
+index 64c999701a..c7abe78da8 100644
+--- a/security/manager/ssl/NSSSocketControl.cpp
++++ b/security/manager/ssl/NSSSocketControl.cpp
+@@ -39,7 +39,7 @@ NSSSocketControl::NSSSocketControl(const nsCString& aHostName, int32_t aPort,
+       mIsFullHandshake(false),
+       mNotedTimeUntilReady(false),
+       mEchExtensionStatus(EchExtensionStatus::kNotPresent),
+-      mSentXyberShare(false),
++      mSentMlkemShare(false),
+       mHasTls13HandshakeSecrets(false),
+       mIsShortWritePending(false),
+       mShortWritePendingByte(0),
+diff --git a/security/manager/ssl/NSSSocketControl.h b/security/manager/ssl/NSSSocketControl.h
+index 9afae1926c..2701b7346e 100644
+--- a/security/manager/ssl/NSSSocketControl.h
++++ b/security/manager/ssl/NSSSocketControl.h
+@@ -117,14 +117,14 @@ class NSSSocketControl final : public CommonSocketControl {
+     return mEchExtensionStatus;
+   }
+ 
+-  void WillSendXyberShare() {
++  void WillSendMlkemShare() {
+     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+-    mSentXyberShare = true;
++    mSentMlkemShare = true;
+   }
+ 
+-  bool SentXyberShare() {
++  bool SentMlkemShare() {
+     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+-    return mSentXyberShare;
++    return mSentMlkemShare;
+   }
+ 
+   void SetHasTls13HandshakeSecrets() {
+@@ -307,7 +307,7 @@ class NSSSocketControl final : public CommonSocketControl {
+   bool mIsFullHandshake;
+   bool mNotedTimeUntilReady;
+   EchExtensionStatus mEchExtensionStatus;  // Currently only used for telemetry.
+-  bool mSentXyberShare;
++  bool mSentMlkemShare;
+   bool mHasTls13HandshakeSecrets;
+ 
+   // True when SSL layer has indicated an "SSL short write", i.e. need
+diff --git a/security/manager/ssl/metrics.yaml b/security/manager/ssl/metrics.yaml
+index e25ab6a7e5..ce0177b384 100644
+--- a/security/manager/ssl/metrics.yaml
++++ b/security/manager/ssl/metrics.yaml
+@@ -68,7 +68,7 @@ tls:
+   xyber_intolerance_reason:
+     type: labeled_counter
+     description: >
+-      The error that was returned from a failed TLS 1.3 handshake in which the client sent a Xyber key share (see tlsIntoleranceTelemetryBucket() in nsNSSIOLayer.cpp).
++      The error that was returned from a failed TLS 1.3 handshake in which the client sent a mlkem768x25519 key share (see tlsIntoleranceTelemetryBucket() in nsNSSIOLayer.cpp).
+     data_sensitivity:
+       - technical
+     bugs:
+diff --git a/security/manager/ssl/nsNSSCallbacks.cpp b/security/manager/ssl/nsNSSCallbacks.cpp
+index c3a23213c5..cb37603782 100644
+--- a/security/manager/ssl/nsNSSCallbacks.cpp
++++ b/security/manager/ssl/nsNSSCallbacks.cpp
+@@ -656,8 +656,8 @@ nsCString getKeaGroupName(uint32_t aKeaGroup) {
+     case ssl_grp_ec_curve25519:
+       groupName = "x25519"_ns;
+       break;
+-    case ssl_grp_kem_xyber768d00:
+-      groupName = "xyber768d00"_ns;
++    case ssl_grp_kem_mlkem768x25519:
++      groupName = "mlkem768x25519"_ns;
+       break;
+     case ssl_grp_ffdhe_2048:
+       groupName = "FF 2048"_ns;
+@@ -1045,7 +1045,6 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
+                            channelInfo.keaKeyBits);
+         break;
+       case ssl_kea_ecdh_hybrid:
+-        // Bug 1874963: Add probes for Xyber768d00
+         break;
+       default:
+         MOZ_CRASH("impossible KEA");
+@@ -1146,7 +1145,8 @@ void SecretCallback(PRFileDesc* fd, PRUint16 epoch, SSLSecretDirection dir,
+   if (epoch == 2 && dir == ssl_secret_read) {
+     // |secret| is the server_handshake_traffic_secret. Set a flag to indicate
+     // that the Server Hello has been processed successfully. We use this when
+-    // deciding whether to retry a connection in which a Xyber share was sent.
++    // deciding whether to retry a connection in which an mlkem768x25519 share
++    // was sent.
+     infoObject->SetHasTls13HandshakeSecrets();
+   }
+ }
+diff --git a/security/manager/ssl/nsNSSComponent.cpp b/security/manager/ssl/nsNSSComponent.cpp
+index 5f3792fd52..1fff6de2d6 100644
+--- a/security/manager/ssl/nsNSSComponent.cpp
++++ b/security/manager/ssl/nsNSSComponent.cpp
+@@ -1084,9 +1084,9 @@ void SetDeprecatedTLS1CipherPrefs() {
+ // static
+ void SetKyberPolicy() {
+   if (StaticPrefs::security_tls_enable_kyber()) {
+-    NSS_SetAlgorithmPolicy(SEC_OID_XYBER768D00, NSS_USE_ALG_IN_SSL_KX, 0);
++    NSS_SetAlgorithmPolicy(SEC_OID_MLKEM768X25519, NSS_USE_ALG_IN_SSL_KX, 0);
+   } else {
+-    NSS_SetAlgorithmPolicy(SEC_OID_XYBER768D00, 0, NSS_USE_ALG_IN_SSL_KX);
++    NSS_SetAlgorithmPolicy(SEC_OID_MLKEM768X25519, 0, NSS_USE_ALG_IN_SSL_KX);
+   }
+ }
+ 
+diff --git a/security/manager/ssl/nsNSSIOLayer.cpp b/security/manager/ssl/nsNSSIOLayer.cpp
+index c31f3064ee..24ca99d0f4 100644
+--- a/security/manager/ssl/nsNSSIOLayer.cpp
++++ b/security/manager/ssl/nsNSSIOLayer.cpp
+@@ -448,14 +448,15 @@ bool retryDueToTLSIntolerance(PRErrorCode err, NSSSocketControl* socketInfo) {
+   }
+ 
+   if (!socketInfo->IsPreliminaryHandshakeDone() &&
+-      !socketInfo->HasTls13HandshakeSecrets() && socketInfo->SentXyberShare()) {
++      !socketInfo->HasTls13HandshakeSecrets() && socketInfo->SentMlkemShare()) {
+     nsAutoCString errorName;
+     const char* prErrorName = PR_ErrorToName(err);
+     if (prErrorName) {
+       errorName.AppendASCII(prErrorName);
+     }
+     mozilla::glean::tls::xyber_intolerance_reason.Get(errorName).Add(1);
+-    // Don't record version intolerance if we sent Xyber, just force a retry.
++    // Don't record version intolerance if we sent mlkem768x25519, just force a
++    // retry.
+     return true;
+   }
+ 
+@@ -1561,7 +1562,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
+       !(infoObject->GetProviderFlags() &
+         (nsISocketProvider::BE_CONSERVATIVE | nsISocketProvider::IS_RETRY))) {
+     const SSLNamedGroup namedGroups[] = {
+-        ssl_grp_kem_xyber768d00, ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1,
++        ssl_grp_kem_mlkem768x25519, ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1,
+         ssl_grp_ec_secp384r1,    ssl_grp_ec_secp521r1,  ssl_grp_ffdhe_2048,
+         ssl_grp_ffdhe_3072};
+     if (SECSuccess != SSL_NamedGroupConfig(fd, namedGroups,
+@@ -1573,12 +1574,12 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
+     if (SECSuccess != SSL_SendAdditionalKeyShares(fd, 2)) {
+       return NS_ERROR_FAILURE;
+     }
+-    infoObject->WillSendXyberShare();
++    infoObject->WillSendMlkemShare();
+   } else {
+     const SSLNamedGroup namedGroups[] = {
+         ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1, ssl_grp_ec_secp384r1,
+         ssl_grp_ec_secp521r1,  ssl_grp_ffdhe_2048,   ssl_grp_ffdhe_3072};
+-    // Skip the |ssl_grp_kem_xyber768d00| entry.
++    // Skip the |ssl_grp_kem_mlkem768x25519| entry.
+     if (SECSuccess != SSL_NamedGroupConfig(fd, namedGroups,
+                                            mozilla::ArrayLength(namedGroups))) {
+       return NS_ERROR_FAILURE;
+diff --git a/security/manager/ssl/tests/unit/test_faulty_server.js b/security/manager/ssl/tests/unit/test_faulty_server.js
+index f617908e28..7e476a9688 100644
+--- a/security/manager/ssl/tests/unit/test_faulty_server.js
++++ b/security/manager/ssl/tests/unit/test_faulty_server.js
+@@ -72,28 +72,28 @@ add_task(
+   {
+     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
+   },
+-  async function testRetryXyber() {
+-    const retryDomain = "xyber-net-interrupt.example.com";
++  async function testRetryMlkem768x25519() {
++    const retryDomain = "mlkem768x25519-net-interrupt.example.com";
+ 
+     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
+     Services.prefs.setCharPref("network.dns.localDomains", [retryDomain]);
+     Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
+ 
+-    // Get the number of xyber / x25519 callbacks prior to making the request
+-    // ssl_grp_kem_xyber768d00 = 25497
++    // Get the number of mlkem768x25519 and x25519 callbacks prior to making the request
++    // ssl_grp_kem_mlkem768x25519 = 4588
+     // ssl_grp_ec_curve25519 = 29
+-    let countOfXyber = handlerCount("/callback/25497");
++    let countOfMlkem = handlerCount("/callback/4588");
+     let countOfX25519 = handlerCount("/callback/29");
+     let chan = makeChan(`https://${retryDomain}:8443`);
+     let [, buf] = await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
+     ok(buf);
+-    // The server will make a xyber768d00 callback for the initial request, and
++    // The server will make a mlkem768x25519 callback for the initial request, and
+     // then an x25519 callback for the retry. Both callback counts should
+     // increment by one.
+     equal(
+-      handlerCount("/callback/25497"),
+-      countOfXyber + 1,
+-      "negotiated xyber768d00"
++      handlerCount("/callback/4588"),
++      countOfMlkem + 1,
++      "negotiated mlkem768x25519"
+     );
+     equal(handlerCount("/callback/29"), countOfX25519 + 1, "negotiated x25519");
+     if (!mozinfo.socketprocess_networking) {
+@@ -111,27 +111,28 @@ add_task(
+   {
+     skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
+   },
+-  async function testNoRetryXyber() {
+-    const retryDomain = "xyber-alert-after-server-hello.example.com";
++  async function testNoRetryMlkem768x25519() {
++    const retryDomain = "mlkem768x25519-alert-after-server-hello.example.com";
+ 
+     Services.prefs.setBoolPref("security.tls.enable_kyber", true);
+     Services.prefs.setCharPref("network.dns.localDomains", [retryDomain]);
+     Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
+ 
+-    // Get the number of xyber / x25519 / p256 callbacks prior to making the request
+-    // ssl_grp_kem_xyber768d00 = 25497
++    // Get the number of mlkem768x25519 and x25519 callbacks prior to making
++    // the request
++    // ssl_grp_kem_mlkem768x25519 = 4588
+     // ssl_grp_ec_curve25519 = 29
+-    let countOfXyber = handlerCount("/callback/25497");
++    let countOfMlkem = handlerCount("/callback/4588");
+     let countOfX25519 = handlerCount("/callback/29");
+     let chan = makeChan(`https://${retryDomain}:8443`);
+     let [req] = await channelOpenPromise(chan, CL_EXPECT_FAILURE);
+     equal(req.status, 0x805a2f4d); // psm::GetXPCOMFromNSSError(SSL_ERROR_HANDSHAKE_FAILED)
+-    // The server will make a xyber768d00 callback for the initial request and
++    // The server will make a mlkem768x25519 callback for the initial request and
+     // the client should not retry.
+     equal(
+-      handlerCount("/callback/25497"),
+-      countOfXyber + 1,
+-      "negotiated xyber768d00"
++      handlerCount("/callback/4588"),
++      countOfMlkem + 1,
++      "negotiated mlkem768x25519"
+     );
+     equal(
+       handlerCount("/callback/29"),
+diff --git a/security/manager/ssl/tests/unit/tlsserver/cmd/FaultyServer.cpp b/security/manager/ssl/tests/unit/tlsserver/cmd/FaultyServer.cpp
+index 4764ed921d..ba48016f58 100644
+--- a/security/manager/ssl/tests/unit/tlsserver/cmd/FaultyServer.cpp
++++ b/security/manager/ssl/tests/unit/tlsserver/cmd/FaultyServer.cpp
+@@ -21,7 +21,7 @@ enum FaultType {
+   None = 0,
+   ZeroRtt,
+   UnknownSNI,
+-  Xyber,
++  Mlkem768x25519,
+ };
+ 
+ struct FaultyServerHost {
+@@ -38,9 +38,10 @@ const char* kHostZeroRttAlertVersion =
+ const char* kHostZeroRttAlertUnexpected = "0rtt-alert-unexpected.example.com";
+ const char* kHostZeroRttAlertDowngrade = "0rtt-alert-downgrade.example.com";
+ 
+-const char* kHostXyberNetInterrupt = "xyber-net-interrupt.example.com";
+-const char* kHostXyberAlertAfterServerHello =
+-    "xyber-alert-after-server-hello.example.com";
++const char* kHostMlkem768x25519NetInterrupt =
++    "mlkem768x25519-net-interrupt.example.com";
++const char* kHostMlkem768x25519AlertAfterServerHello =
++    "mlkem768x25519-alert-after-server-hello.example.com";
+ 
+ const char* kCertWildcard = "default-ee";
+ 
+@@ -55,8 +56,8 @@ const FaultyServerHost sFaultyServerHosts[]{
+     {kHostZeroRttAlertVersion, kCertWildcard, ZeroRtt},
+     {kHostZeroRttAlertUnexpected, kCertWildcard, ZeroRtt},
+     {kHostZeroRttAlertDowngrade, kCertWildcard, ZeroRtt},
+-    {kHostXyberNetInterrupt, kCertWildcard, Xyber},
+-    {kHostXyberAlertAfterServerHello, kCertWildcard, Xyber},
++    {kHostMlkem768x25519NetInterrupt, kCertWildcard, Mlkem768x25519},
++    {kHostMlkem768x25519AlertAfterServerHello, kCertWildcard, Mlkem768x25519},
+     {nullptr, nullptr},
+ };
+ 
+@@ -168,21 +169,22 @@ SECStatus FailingWriteCallback(PRFileDesc* fd, PRUint16 epoch,
+   return SECFailure;
+ }
+ 
+-void SecretCallbackFailXyber(PRFileDesc* fd, PRUint16 epoch,
+-                             SSLSecretDirection dir, PK11SymKey* secret,
+-                             void* arg) {
+-  fprintf(stderr, "Xyber handler epoch=%d dir=%d\n", epoch, (uint32_t)dir);
++void SecretCallbackFailMlkem768x25519(PRFileDesc* fd, PRUint16 epoch,
++                                      SSLSecretDirection dir,
++                                      PK11SymKey* secret, void* arg) {
++  fprintf(stderr, "Mlkem768x25519 handler epoch=%d dir=%d\n", epoch,
++          (uint32_t)dir);
+   FaultyServerHost* host = static_cast<FaultyServerHost*>(arg);
+ 
+   if (epoch == 2 && dir == ssl_secret_write) {
+     sslSocket* ss = ssl_FindSocket(fd);
+     if (!ss) {
+-      fprintf(stderr, "Xyber handler, no ss!\n");
++      fprintf(stderr, "Mlkem768x25519 handler, no ss!\n");
+       return;
+     }
+ 
+     if (!ss->sec.keaGroup) {
+-      fprintf(stderr, "Xyber handler, no ss->sec.keaGroup!\n");
++      fprintf(stderr, "Mlkem768x25519 handler, no ss->sec.keaGroup!\n");
+       return;
+     }
+ 
+@@ -190,17 +192,18 @@ void SecretCallbackFailXyber(PRFileDesc* fd, PRUint16 epoch,
+     SprintfLiteral(path, "/callback/%u", ss->sec.keaGroup->name);
+     DoCallback(path);
+ 
+-    if (ss->sec.keaGroup->name != ssl_grp_kem_xyber768d00) {
++    if (ss->sec.keaGroup->name != ssl_grp_kem_mlkem768x25519) {
+       return;
+     }
+ 
+-    fprintf(stderr, "Xyber handler, configuring alert\n");
+-    if (strcmp(host->mHostName, kHostXyberNetInterrupt) == 0) {
++    fprintf(stderr, "Mlkem768x25519 handler, configuring alert\n");
++    if (strcmp(host->mHostName, kHostMlkem768x25519NetInterrupt) == 0) {
+       // Install a record write callback that causes the next write to fail.
+       // The client will see this as a PR_END_OF_FILE / NS_ERROR_NET_INTERRUPT
+       // error.
+       ss->recordWriteCallback = FailingWriteCallback;
+-    } else if (!strcmp(host->mHostName, kHostXyberAlertAfterServerHello)) {
++    } else if (!strcmp(host->mHostName,
++                       kHostMlkem768x25519AlertAfterServerHello)) {
+       SSL3_SendAlert(ss, alert_fatal, close_notify);
+     }
+   }
+@@ -219,17 +222,17 @@ int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
+     fprintf(stderr, "found pre-defined host '%s'\n", host->mHostName);
+   }
+ 
+-  const SSLNamedGroup xyberTestNamedGroups[] = {ssl_grp_kem_xyber768d00,
++  const SSLNamedGroup mlkemTestNamedGroups[] = {ssl_grp_kem_mlkem768x25519,
+                                                 ssl_grp_ec_curve25519};
+ 
+   switch (host->mFaultType) {
+     case ZeroRtt:
+       SSL_SecretCallback(aFd, &SecretCallbackFailZeroRtt, (void*)host);
+       break;
+-    case Xyber:
+-      SSL_SecretCallback(aFd, &SecretCallbackFailXyber, (void*)host);
+-      SSL_NamedGroupConfig(aFd, xyberTestNamedGroups,
+-                           mozilla::ArrayLength(xyberTestNamedGroups));
++    case Mlkem768x25519:
++      SSL_SecretCallback(aFd, &SecretCallbackFailMlkem768x25519, (void*)host);
++      SSL_NamedGroupConfig(aFd, mlkemTestNamedGroups,
++                           mozilla::ArrayLength(mlkemTestNamedGroups));
+       break;
+     case None:
+       break;
+diff --git a/security/manager/ssl/tests/unit/tlsserver/lib/TLSServer.cpp b/security/manager/ssl/tests/unit/tlsserver/lib/TLSServer.cpp
+index e4aeda0e82..401b982346 100644
+--- a/security/manager/ssl/tests/unit/tlsserver/lib/TLSServer.cpp
++++ b/security/manager/ssl/tests/unit/tlsserver/lib/TLSServer.cpp
+@@ -553,8 +553,6 @@ int StartServer(int argc, char* argv[], SSLSNISocketConfig sniSocketConfig,
+     return 1;
+   }
+ 
+-  NSS_SetAlgorithmPolicy(SEC_OID_XYBER768D00, NSS_USE_ALG_IN_SSL_KX, 0);
+-
+   if (SSL_ConfigServerSessionIDCache(0, 0, 0, nullptr) != SECSuccess) {
+     PrintPRError("SSL_ConfigServerSessionIDCache failed");
+     return 1;
+diff --git a/third_party/rust/neqo-crypto/.cargo-checksum.json b/third_party/rust/neqo-crypto/.cargo-checksum.json
+index 188160d135..bea265565f 100644
+--- a/third_party/rust/neqo-crypto/.cargo-checksum.json
++++ b/third_party/rust/neqo-crypto/.cargo-checksum.json
+@@ -1 +1 @@
+-{"files":{"Cargo.toml":"fa915d4cac0a051c77107dd6f74514915fe2924fe3eecaad10e995062767fbbb","bindings/bindings.toml":"56921b753535f899b8095df3e8af04b1dc2213c4808dfb39734a3c554454d01d","bindings/nspr_err.h":"2d5205d017b536c2d838bcf9bc4ec79f96dd50e7bb9b73892328781f1ee6629d","bindings/nspr_error.h":"e41c03c77b8c22046f8618832c9569fbcc7b26d8b9bbc35eea7168f35e346889","bindings/nspr_io.h":"085b289849ef0e77f88512a27b4d9bdc28252bd4d39c6a17303204e46ef45f72","bindings/nspr_time.h":"2e637fd338a5cf0fd3fb0070a47f474a34c2a7f4447f31b6875f5a9928d0a261","bindings/nss_ciphers.h":"95ec6344a607558b3c5ba8510f463b6295f3a2fb3f538a01410531045a5f62d1","bindings/nss_init.h":"ef49045063782fb612aff459172cc6a89340f15005808608ade5320ca9974310","bindings/nss_p11.h":"0b81e64fe6db49b2ecff94edd850be111ef99ec11220e88ceb1c67be90143a78","bindings/nss_secerr.h":"713e8368bdae5159af7893cfa517dabfe5103cede051dee9c9557c850a2defc6","bindings/nss_ssl.h":"af222fb957b989e392e762fa2125c82608a0053aff4fb97e556691646c88c335","bindings/nss_sslerr.h":"24b97f092183d8486f774cdaef5030d0249221c78343570d83a4ee5b594210ae","bindings/nss_sslopt.h":"b7807eb7abdad14db6ad7bc51048a46b065a0ea65a4508c95a12ce90e59d1eea","build.rs":"6c3e94359395cce5cb29bc0063ff930ffcd7edd50c040cb459acce6c80aa4ef4","min_version.txt":"7e98f86c69cddb4f65cf96a6de1f4297e3ce224a4c4628609e29042b6c4dcfb9","src/aead.rs":"fc42bc20b84d2e5ccfd56271ae2d2db082e55586ea2926470c102da177f22296","src/aead_null.rs":"3a553f21126c9ca0116c2be81e5a777011b33c159fd88c4f384614bbdb06bb2e","src/agent.rs":"0ef7b488480d12c01a122050e82809bc784443ef6277d75fce21d706fbf5eaaf","src/agentio.rs":"415f70b95312d3ee6d74ba6f28094246101ab6d535aa9df880c38d8bb5a9279e","src/auth.rs":"ced1a18f691894984244088020ea25dc1ee678603317f0c7dfc8b8842fa750b4","src/cert.rs":"8942cb3ce25a61f92b6ffc30fb286052ed6f56eeda3be12fd46ea76ceba6c1cf","src/constants.rs":"f5c779db128a8b0607841ca18c376971017eb327e102e5e6959a7d8effe4b3a6","src/ech.rs":"9d322fcc01c0886f1dfe9bb6273cb9f88a746452ac9a802761b1816a05930c1f","src/err.rs":"ae979f334604aba89640c4491262641910033f0bd790d58671f649f5039b291c","src/exp.rs":"cec59d61fc95914f9703d2fb6490a8507af993c9db710dde894f2f8fd38123c7","src/ext.rs":"cbf7d9f5ecabf4b8c9efd6c334637ab1596ec5266d38ab8d2d6ceae305283deb","src/hkdf.rs":"ef32f20e30a9bd7f094199536d19c87c4231b7fbbe4a9c54c70e84ca9c6575be","src/hp.rs":"644f1bed67f1c6189a67c8d02ab3358aaa7f63af4b913dd7395becbc01a84291","src/lib.rs":"1f2c171e76f353c99cebe66f9812d3021ab2914eb015fed6a07409b7cfa426e6","src/min_version.rs":"89b7ef6f9d2301db4f689f4d963b58375d577f705b92003a804048441e00cfd1","src/p11.rs":"704c5f164c4f195c8051c5bf1e69a912c34b613a8cf6bed5f577dc5674eea34e","src/prio.rs":"e5e169296c0ac69919c59fb6c1f8bd6bf079452eaa13d75da0edd41d435d3f6f","src/replay.rs":"96b7af8eff9e14313e79303092018b12e8834f780c96b8e247c497fdc680c696","src/result.rs":"0587cbb6aace71a7f9765ef7c01dcd9f73a49dcc6331e1d8fe4de2aef6ca65b6","src/secrets.rs":"4ffaa66f25df47dadf042063bff5953effa7bf2f4920cafe827757d6a659cb58","src/selfencrypt.rs":"b7cc1c896c7661c37461fc3a8bcbfdf2589433b907fa5f968ae4f6907704b441","src/ssl.rs":"c83baa5518b81dd06f2e4072ea3c2d666ccdeb8b1ff6e3746eea9f1af47023a6","src/time.rs":"c71a01ff8aa2c0e97fb16ad620df4ed6b7cc1819ff93f46634e2f1c9551627ec","tests/aead.rs":"e36ae77802df1ea6d17cfd1bd2178a3706089577d6fd1554ca86e748b8b235b9","tests/agent.rs":"824735f88e487a3748200844e9481e81a72163ad74d82faa9aa16594d9b9bb25","tests/ext.rs":"1b047d23d9b224ad06eb65d8f3a7b351e263774e404c79bbcbe8f43790e29c18","tests/handshake.rs":"e892a2839b31414be16e96cdf3b1a65978716094700c1a4989229f7edbf578a0","tests/hkdf.rs":"1d2098dc8398395864baf13e4886cfd1da6d36118727c3b264f457ee3da6b048","tests/hp.rs":"b24fec53771c169be788772532d2617a5349196cf87d6444dc74214f7c73e92c","tests/init.rs":"616313cb38eac44b8c71a1d23a52a7d7b4c7c07d4c20dc9ea6600c3317f92613","tests/selfencrypt.rs":"8d10840b41629bf449a6b3a551377315e8a05ca26c6b041548748196652c5909"},"package":null}
+\ No newline at end of file
++{"files":{"Cargo.toml":"fa915d4cac0a051c77107dd6f74514915fe2924fe3eecaad10e995062767fbbb","bindings/bindings.toml":"56921b753535f899b8095df3e8af04b1dc2213c4808dfb39734a3c554454d01d","bindings/nspr_err.h":"2d5205d017b536c2d838bcf9bc4ec79f96dd50e7bb9b73892328781f1ee6629d","bindings/nspr_error.h":"e41c03c77b8c22046f8618832c9569fbcc7b26d8b9bbc35eea7168f35e346889","bindings/nspr_io.h":"085b289849ef0e77f88512a27b4d9bdc28252bd4d39c6a17303204e46ef45f72","bindings/nspr_time.h":"2e637fd338a5cf0fd3fb0070a47f474a34c2a7f4447f31b6875f5a9928d0a261","bindings/nss_ciphers.h":"95ec6344a607558b3c5ba8510f463b6295f3a2fb3f538a01410531045a5f62d1","bindings/nss_init.h":"ef49045063782fb612aff459172cc6a89340f15005808608ade5320ca9974310","bindings/nss_p11.h":"0b81e64fe6db49b2ecff94edd850be111ef99ec11220e88ceb1c67be90143a78","bindings/nss_secerr.h":"713e8368bdae5159af7893cfa517dabfe5103cede051dee9c9557c850a2defc6","bindings/nss_ssl.h":"af222fb957b989e392e762fa2125c82608a0053aff4fb97e556691646c88c335","bindings/nss_sslerr.h":"24b97f092183d8486f774cdaef5030d0249221c78343570d83a4ee5b594210ae","bindings/nss_sslopt.h":"b7807eb7abdad14db6ad7bc51048a46b065a0ea65a4508c95a12ce90e59d1eea","build.rs":"6c3e94359395cce5cb29bc0063ff930ffcd7edd50c040cb459acce6c80aa4ef4","min_version.txt":"7e98f86c69cddb4f65cf96a6de1f4297e3ce224a4c4628609e29042b6c4dcfb9","src/aead.rs":"fc42bc20b84d2e5ccfd56271ae2d2db082e55586ea2926470c102da177f22296","src/aead_null.rs":"3a553f21126c9ca0116c2be81e5a777011b33c159fd88c4f384614bbdb06bb2e","src/agent.rs":"0ef7b488480d12c01a122050e82809bc784443ef6277d75fce21d706fbf5eaaf","src/agentio.rs":"415f70b95312d3ee6d74ba6f28094246101ab6d535aa9df880c38d8bb5a9279e","src/auth.rs":"ced1a18f691894984244088020ea25dc1ee678603317f0c7dfc8b8842fa750b4","src/cert.rs":"8942cb3ce25a61f92b6ffc30fb286052ed6f56eeda3be12fd46ea76ceba6c1cf","src/constants.rs":"78df03f9209ff36279b75f88f6d3d15fed4a0fdd1f6edc8ea8100ed9ae34320f","src/ech.rs":"9d322fcc01c0886f1dfe9bb6273cb9f88a746452ac9a802761b1816a05930c1f","src/err.rs":"ae979f334604aba89640c4491262641910033f0bd790d58671f649f5039b291c","src/exp.rs":"cec59d61fc95914f9703d2fb6490a8507af993c9db710dde894f2f8fd38123c7","src/ext.rs":"cbf7d9f5ecabf4b8c9efd6c334637ab1596ec5266d38ab8d2d6ceae305283deb","src/hkdf.rs":"ef32f20e30a9bd7f094199536d19c87c4231b7fbbe4a9c54c70e84ca9c6575be","src/hp.rs":"644f1bed67f1c6189a67c8d02ab3358aaa7f63af4b913dd7395becbc01a84291","src/lib.rs":"f0d0b14c7330fa4040166953c4a428918ce78967fe500bfeaa5f2c10b64567b3","src/min_version.rs":"89b7ef6f9d2301db4f689f4d963b58375d577f705b92003a804048441e00cfd1","src/p11.rs":"704c5f164c4f195c8051c5bf1e69a912c34b613a8cf6bed5f577dc5674eea34e","src/prio.rs":"e5e169296c0ac69919c59fb6c1f8bd6bf079452eaa13d75da0edd41d435d3f6f","src/replay.rs":"96b7af8eff9e14313e79303092018b12e8834f780c96b8e247c497fdc680c696","src/result.rs":"0587cbb6aace71a7f9765ef7c01dcd9f73a49dcc6331e1d8fe4de2aef6ca65b6","src/secrets.rs":"4ffaa66f25df47dadf042063bff5953effa7bf2f4920cafe827757d6a659cb58","src/selfencrypt.rs":"b7cc1c896c7661c37461fc3a8bcbfdf2589433b907fa5f968ae4f6907704b441","src/ssl.rs":"c83baa5518b81dd06f2e4072ea3c2d666ccdeb8b1ff6e3746eea9f1af47023a6","src/time.rs":"c71a01ff8aa2c0e97fb16ad620df4ed6b7cc1819ff93f46634e2f1c9551627ec","tests/aead.rs":"e36ae77802df1ea6d17cfd1bd2178a3706089577d6fd1554ca86e748b8b235b9","tests/agent.rs":"824735f88e487a3748200844e9481e81a72163ad74d82faa9aa16594d9b9bb25","tests/ext.rs":"1b047d23d9b224ad06eb65d8f3a7b351e263774e404c79bbcbe8f43790e29c18","tests/handshake.rs":"e892a2839b31414be16e96cdf3b1a65978716094700c1a4989229f7edbf578a0","tests/hkdf.rs":"1d2098dc8398395864baf13e4886cfd1da6d36118727c3b264f457ee3da6b048","tests/hp.rs":"b24fec53771c169be788772532d2617a5349196cf87d6444dc74214f7c73e92c","tests/init.rs":"616313cb38eac44b8c71a1d23a52a7d7b4c7c07d4c20dc9ea6600c3317f92613","tests/selfencrypt.rs":"8d10840b41629bf449a6b3a551377315e8a05ca26c6b041548748196652c5909"},"package":null}
+diff --git a/third_party/rust/neqo-crypto/src/constants.rs b/third_party/rust/neqo-crypto/src/constants.rs
+index daef3d3c56..7e6823fd01 100644
+--- a/third_party/rust/neqo-crypto/src/constants.rs
++++ b/third_party/rust/neqo-crypto/src/constants.rs
+@@ -62,7 +62,7 @@ remap_enum! {
+         TLS_GRP_EC_SECP384R1 = ssl_grp_ec_secp384r1,
+         TLS_GRP_EC_SECP521R1 = ssl_grp_ec_secp521r1,
+         TLS_GRP_EC_X25519 = ssl_grp_ec_curve25519,
+-        TLS_GRP_KEM_XYBER768D00 = ssl_grp_kem_xyber768d00,
++        TLS_GRP_KEM_MLKEM768X25519 = ssl_grp_kem_mlkem768x25519,
+     }
+ }
+ 
+diff --git a/third_party/rust/neqo-crypto/src/lib.rs b/third_party/rust/neqo-crypto/src/lib.rs
+index 9b8a478294..cb94d1f32b 100644
+--- a/third_party/rust/neqo-crypto/src/lib.rs
++++ b/third_party/rust/neqo-crypto/src/lib.rs
+@@ -122,13 +122,6 @@ pub fn init() -> Res<()> {
+ 
+         secstatus_to_res(unsafe { nss::NSS_NoDB_Init(null()) })?;
+         secstatus_to_res(unsafe { nss::NSS_SetDomesticPolicy() })?;
+-        secstatus_to_res(unsafe {
+-            p11::NSS_SetAlgorithmPolicy(
+-                p11::SECOidTag::SEC_OID_XYBER768D00,
+-                p11::NSS_USE_ALG_IN_SSL_KX,
+-                0,
+-            )
+-        })?;
+ 
+         Ok(NssLoaded::NoDb)
+     });
+diff --git a/third_party/rust/neqo-transport/.cargo-checksum.json b/third_party/rust/neqo-transport/.cargo-checksum.json
+index 79d2126b4a..a67d56971b 100644
+--- a/third_party/rust/neqo-transport/.cargo-checksum.json
++++ b/third_party/rust/neqo-transport/.cargo-checksum.json
+@@ -1 +1 @@
+-{"files":{"Cargo.toml":"2c18e43bca0b6e963cd3c169ed4b1dbf21de7e420b71be1d9cf1bf1bfcaa8d01","benches/range_tracker.rs":"590dd1f81c92e89ce28af1efdda583d85240438bd9c4c68767286d22a299ad4b","benches/rx_stream_orderer.rs":"53a008357703251a18100521a12d8fa9443c5601ddc3cbd1b3c2899074da4c4f","benches/transfer.rs":"94eb0ec1a0a7d0a4863ddc1c6d006521e52c1f2e7f03c69428b18f7eb827d33f","build.rs":"78ec79c93bf13c3a40ceef8bba1ea2eada61c8f2dfc15ea7bf117958d367949c","src/ackrate.rs":"4bb882e1069a0707dc85338b75327e2910c93ee5f36575767a0d58c4c41c9d4f","src/addr_valid.rs":"03c0b2ff85254179c5d425b12acfdcc6b1ea5735aeb0f604b9b3603451b3ef0a","src/cc/classic_cc.rs":"bd4999f21b6b7d754c8694345f40d0e99c1c3caba3d23a90bd9eb12798ef4979","src/cc/cubic.rs":"24c6913cc6346e5361007221c26e8096ece51583431fc3ab9c99e4ce4b0a9f5d","src/cc/mod.rs":"8031ed3d37bf780dd1364114149b1a1327656e7f481768548ad77db7006daf60","src/cc/new_reno.rs":"25d0921005688e0f0666efd0a4931b4f8cd44363587d98e5b6404818c5d05dd4","src/cc/tests/cubic.rs":"25ee2c60549bb8b3c1e9a915f148928a26b3f1c51e5f7fe6b646a437f520954c","src/cc/tests/mod.rs":"44f8df551e742ae1037cd1cdb85b2c1334c2e5ab3c23ed63d856dbc6b8743afc","src/cc/tests/new_reno.rs":"3cd7373063a3afecb6dfae7894edf959641d87d3de55d4abfa7742cd115fa358","src/cid.rs":"9686a3070c593cfca846d7549863728e31211b304b9fa876220f79bff5e24173","src/connection/dump.rs":"bd4fb55785fe42f5c94f7bcc14ccf4ae377d28b691fb55dbf1139ae9412b0ea9","src/connection/idle.rs":"6f588bab950620df322033abea5f8a731f5b6d88cbe68694b69ab8acea0745ae","src/connection/mod.rs":"72ab734a8d368b2f2d430899a65f5a8c64a21d797a0c3e6d3e53666ef8e0e740","src/connection/params.rs":"38e0b47c8cc5fbe602e3174d7a70df410829bc240b42f21cebd10818e606ef7c","src/connection/saved.rs":"97eb19792be3c4d721057021a43ea50a52f89a3cfa583d3d3dcf5d9144b332f5","src/connection/state.rs":"b1d4bdda3479e7957d1949a969281ecd8a3d88f4fbaff6dcf7ebbb576759339c","src/connection/test_internal.rs":"f3ebfe97b25c9c716d41406066295e5aff4e96a3051ef4e2b5fb258282bbc14c","src/connection/tests/ackrate.rs":"4a2b835575850ae4a14209d3e51883ecb1e69afb44ef91b5e13a5e6cb7174fab","src/connection/tests/cc.rs":"d9a0f00a8f439c4ea8d4b6fa689fbde8bd283256afdd68ec4a27f6638b729704","src/connection/tests/close.rs":"5f245fd134bc0759ef0c83a6d53e0a8d5a8e58dcdf203c750ec9121940272461","src/connection/tests/datagram.rs":"7d89e5293d5b50c7a54c9b48949c2c4c8ef5dc08f3e7e5f51654586578d65602","src/connection/tests/ecn.rs":"3ff05893154fb6a895fe4453db7cc54684ba3bdf268a36b69c36c4070768d7b4","src/connection/tests/handshake.rs":"67a6f090ed89ef6c63129f7e662dc1cfff3f291711a866dff3d779caa40e51c7","src/connection/tests/idle.rs":"2d588bd6570172ca08974931273b6c4645af3edca9ccac78499d7d2d5ecec86c","src/connection/tests/keys.rs":"7c58b255e9732711e13f2a3e1daa13ac9481d8c919a32ca62e70c850845a6b38","src/connection/tests/migration.rs":"40d4feba9957de7eef7391009996016af1a3052fabc7659680b64796cf9fb8bf","src/connection/tests/mod.rs":"43b7745e9722333f7bc851c70ccdfdd1dc4da3991a4b821fac677664719e760f","src/connection/tests/null.rs":"38f76a4ea15e6b11634d4374cb0f2a68bd250e5d35831edfce0fa48deeaa420d","src/connection/tests/priority.rs":"dd3504f52d3fce7a96441624bc1c82c733e6bb556b9b79d24d0f4fb4efaf5a9e","src/connection/tests/recovery.rs":"7f28767f3cca2ff60e3dcfa803e12ef043486a222f54681a8faf2ea2fee564a1","src/connection/tests/resumption.rs":"1a0de0993cd325224fc79a3c094d22636d5b122ab1123d16265d4fafb23574bd","src/connection/tests/stream.rs":"3a6b23be63e1901ea479749d8132db86959279329121fe5d51b34c3fef4d4d05","src/connection/tests/vn.rs":"92f61cfe4ccbb88f4f7c14f0e791bdece5368012922714d3dbd6a75bedb1b5a1","src/connection/tests/zerortt.rs":"139f25b992ee6f7e3cc31448f81e511386bb3b0e6691180c7f616b70c4864883","src/crypto.rs":"a0ff9053a13350e34aec02241eb2ae3e86d9f5af21065d5b8d71b7b229e00ced","src/ecn.rs":"2e54e0a57842070a80da61315b601085876351ef0272eaf65b8a59e32ecc4db8","src/events.rs":"3cdd7d5496b2745626db4ceb863b5a91ae943090a43a5816a1f9bcf873fba2be","src/fc.rs":"c8d10909912b6770e644aaec02cff6f89f557d5f40a246aa86654cf88c91d26e","src/frame.rs":"4262717662f155e62bb29c9f0cac295bbae96076eb2d92c27052a35f979aa196","src/lib.rs":"a8ab9b2204d50a3b6f6c1250ed0d47daafaef00c040b93dfa3c60195eeb07624","src/pace.rs":"86a674ac4d086148ea297214910458c3705918bd627b996ba8bbb12f2c4bf99e","src/packet/mod.rs":"16385a097363d3af6452c6dcb7f14fbd86e410dd42fa59435c5beea1699f77e9","src/packet/retry.rs":"d5f999485f21b388a7383cd011fc6e96109c1a9fb5aef79b19017df6844271ff","src/path.rs":"6a49a8a1cad609873f2cacca6489ba1a7a18cf238f7b8f6df2d0b0923edde3fd","src/qlog.rs":"07ea3a3e31ebf3819d40ff0dc4e4a88861db59f761542e9bc2e9e773eb555242","src/quic_datagrams.rs":"3d33ecb9e6e80c77b812e8260fc807352300fb2305a29b797259ae34c52b67c5","src/recovery/mod.rs":"4b1e45db1793785cda67fe804d1e6bc99b5f1a3ed3ff0f82e8164bc0aab11f8e","src/recovery/sent.rs":"959b70ed80b1061acf36bdd007f2b1baefbc8647c3a315d6fbd317884757beca","src/recovery/token.rs":"c1e4190c6733afd2bf5e60060d8ba3ab9fb136e02252e2480b281871a54d6066","src/recv_stream.rs":"f21ae0bb786901bb7d726a94cb3352607b0057128beaa331808137f2f57a330b","src/rtt.rs":"4635dc0c401b78a1fd9d34da6f9bf7f6e7f5be3a57ed9716e0efc8f0f94f1e47","src/send_stream.rs":"5b12a5543dd55d0d506eb64f828883b9761722a1558f16ecb90ce5a43587a2ff","src/sender.rs":"043be47e97d050532f12a564e78605cff7ff23e07639ea06059ebd85e0748f2f","src/server.rs":"3ededa0afd5e6b6888fc5ac9ce48e35e12974c338c7985f2b840e9dc76af0062","src/stats.rs":"257ab1242ea2e6bfac0900e6c4bdad794bc67b666930323d24e022e46b9be82b","src/stream_id.rs":"fd07cbb81709a54bdb0659f676ef851cd145c004b817044ede5b21e54fdb60e4","src/streams.rs":"f2e393dc73cc85c8339cb94daf6a09d3bde4d33d820fd6623ddd6b3d727d5fd5","src/tparams.rs":"592f29c9e2d2a63ff68b024ce23274896ed8ae83192b76b91f5e2991246682cd","src/tracking.rs":"c8581318cd7be3ca94ef4482341cfc1fdb70f934966c63a69335cb0bf5bd292a","src/version.rs":"182484ed9ecc2e17cab73cc61914a86a2d206936cab313825ae76fd37eeade77","tests/common/mod.rs":"7f9437d5efc38f4b9cabfece575e9168580e78e8638f46e538de58607f46ebb8","tests/conn_vectors.rs":"997702f4d8b8fa3b987b33077a0eb325e968b25b61fb4703532f8d97e1d4c98c","tests/connection.rs":"1c14853d61dad5f228a3e1a0becebb0c6826405de59ff601f43d5cb2fdb3f8ea","tests/network.rs":"04921aa5af583e842e6d2176a898fbfea747e831bbe292b5ef8441eaf546b93a","tests/retry.rs":"ace4a0baa36f7218c9942abc2b45b58f8c2dbd2b6004b469751e41b50f6f99d0","tests/server.rs":"9724460d7ac2f9d6af94baf6b3cf950900ae489412edc55d62609bacfcf02b09"},"package":null}
+\ No newline at end of file
++{"files":{"Cargo.toml":"2c18e43bca0b6e963cd3c169ed4b1dbf21de7e420b71be1d9cf1bf1bfcaa8d01","benches/range_tracker.rs":"590dd1f81c92e89ce28af1efdda583d85240438bd9c4c68767286d22a299ad4b","benches/rx_stream_orderer.rs":"53a008357703251a18100521a12d8fa9443c5601ddc3cbd1b3c2899074da4c4f","benches/transfer.rs":"94eb0ec1a0a7d0a4863ddc1c6d006521e52c1f2e7f03c69428b18f7eb827d33f","build.rs":"78ec79c93bf13c3a40ceef8bba1ea2eada61c8f2dfc15ea7bf117958d367949c","src/ackrate.rs":"4bb882e1069a0707dc85338b75327e2910c93ee5f36575767a0d58c4c41c9d4f","src/addr_valid.rs":"03c0b2ff85254179c5d425b12acfdcc6b1ea5735aeb0f604b9b3603451b3ef0a","src/cc/classic_cc.rs":"bd4999f21b6b7d754c8694345f40d0e99c1c3caba3d23a90bd9eb12798ef4979","src/cc/cubic.rs":"24c6913cc6346e5361007221c26e8096ece51583431fc3ab9c99e4ce4b0a9f5d","src/cc/mod.rs":"8031ed3d37bf780dd1364114149b1a1327656e7f481768548ad77db7006daf60","src/cc/new_reno.rs":"25d0921005688e0f0666efd0a4931b4f8cd44363587d98e5b6404818c5d05dd4","src/cc/tests/cubic.rs":"25ee2c60549bb8b3c1e9a915f148928a26b3f1c51e5f7fe6b646a437f520954c","src/cc/tests/mod.rs":"44f8df551e742ae1037cd1cdb85b2c1334c2e5ab3c23ed63d856dbc6b8743afc","src/cc/tests/new_reno.rs":"3cd7373063a3afecb6dfae7894edf959641d87d3de55d4abfa7742cd115fa358","src/cid.rs":"9686a3070c593cfca846d7549863728e31211b304b9fa876220f79bff5e24173","src/connection/dump.rs":"bd4fb55785fe42f5c94f7bcc14ccf4ae377d28b691fb55dbf1139ae9412b0ea9","src/connection/idle.rs":"6f588bab950620df322033abea5f8a731f5b6d88cbe68694b69ab8acea0745ae","src/connection/mod.rs":"72ab734a8d368b2f2d430899a65f5a8c64a21d797a0c3e6d3e53666ef8e0e740","src/connection/params.rs":"38e0b47c8cc5fbe602e3174d7a70df410829bc240b42f21cebd10818e606ef7c","src/connection/saved.rs":"97eb19792be3c4d721057021a43ea50a52f89a3cfa583d3d3dcf5d9144b332f5","src/connection/state.rs":"b1d4bdda3479e7957d1949a969281ecd8a3d88f4fbaff6dcf7ebbb576759339c","src/connection/test_internal.rs":"f3ebfe97b25c9c716d41406066295e5aff4e96a3051ef4e2b5fb258282bbc14c","src/connection/tests/ackrate.rs":"4a2b835575850ae4a14209d3e51883ecb1e69afb44ef91b5e13a5e6cb7174fab","src/connection/tests/cc.rs":"d9a0f00a8f439c4ea8d4b6fa689fbde8bd283256afdd68ec4a27f6638b729704","src/connection/tests/close.rs":"5f245fd134bc0759ef0c83a6d53e0a8d5a8e58dcdf203c750ec9121940272461","src/connection/tests/datagram.rs":"7d89e5293d5b50c7a54c9b48949c2c4c8ef5dc08f3e7e5f51654586578d65602","src/connection/tests/ecn.rs":"3ff05893154fb6a895fe4453db7cc54684ba3bdf268a36b69c36c4070768d7b4","src/connection/tests/handshake.rs":"67a6f090ed89ef6c63129f7e662dc1cfff3f291711a866dff3d779caa40e51c7","src/connection/tests/idle.rs":"2d588bd6570172ca08974931273b6c4645af3edca9ccac78499d7d2d5ecec86c","src/connection/tests/keys.rs":"7c58b255e9732711e13f2a3e1daa13ac9481d8c919a32ca62e70c850845a6b38","src/connection/tests/migration.rs":"40d4feba9957de7eef7391009996016af1a3052fabc7659680b64796cf9fb8bf","src/connection/tests/mod.rs":"43b7745e9722333f7bc851c70ccdfdd1dc4da3991a4b821fac677664719e760f","src/connection/tests/null.rs":"38f76a4ea15e6b11634d4374cb0f2a68bd250e5d35831edfce0fa48deeaa420d","src/connection/tests/priority.rs":"dd3504f52d3fce7a96441624bc1c82c733e6bb556b9b79d24d0f4fb4efaf5a9e","src/connection/tests/recovery.rs":"7f28767f3cca2ff60e3dcfa803e12ef043486a222f54681a8faf2ea2fee564a1","src/connection/tests/resumption.rs":"1a0de0993cd325224fc79a3c094d22636d5b122ab1123d16265d4fafb23574bd","src/connection/tests/stream.rs":"3a6b23be63e1901ea479749d8132db86959279329121fe5d51b34c3fef4d4d05","src/connection/tests/vn.rs":"92f61cfe4ccbb88f4f7c14f0e791bdece5368012922714d3dbd6a75bedb1b5a1","src/connection/tests/zerortt.rs":"139f25b992ee6f7e3cc31448f81e511386bb3b0e6691180c7f616b70c4864883","src/crypto.rs":"033db48824fa541db728b43f25d5852d4c4de735c35d89151336649dd8d2429a","src/ecn.rs":"2e54e0a57842070a80da61315b601085876351ef0272eaf65b8a59e32ecc4db8","src/events.rs":"3cdd7d5496b2745626db4ceb863b5a91ae943090a43a5816a1f9bcf873fba2be","src/fc.rs":"c8d10909912b6770e644aaec02cff6f89f557d5f40a246aa86654cf88c91d26e","src/frame.rs":"4262717662f155e62bb29c9f0cac295bbae96076eb2d92c27052a35f979aa196","src/lib.rs":"a8ab9b2204d50a3b6f6c1250ed0d47daafaef00c040b93dfa3c60195eeb07624","src/pace.rs":"86a674ac4d086148ea297214910458c3705918bd627b996ba8bbb12f2c4bf99e","src/packet/mod.rs":"16385a097363d3af6452c6dcb7f14fbd86e410dd42fa59435c5beea1699f77e9","src/packet/retry.rs":"d5f999485f21b388a7383cd011fc6e96109c1a9fb5aef79b19017df6844271ff","src/path.rs":"6a49a8a1cad609873f2cacca6489ba1a7a18cf238f7b8f6df2d0b0923edde3fd","src/qlog.rs":"07ea3a3e31ebf3819d40ff0dc4e4a88861db59f761542e9bc2e9e773eb555242","src/quic_datagrams.rs":"3d33ecb9e6e80c77b812e8260fc807352300fb2305a29b797259ae34c52b67c5","src/recovery/mod.rs":"4b1e45db1793785cda67fe804d1e6bc99b5f1a3ed3ff0f82e8164bc0aab11f8e","src/recovery/sent.rs":"959b70ed80b1061acf36bdd007f2b1baefbc8647c3a315d6fbd317884757beca","src/recovery/token.rs":"c1e4190c6733afd2bf5e60060d8ba3ab9fb136e02252e2480b281871a54d6066","src/recv_stream.rs":"f21ae0bb786901bb7d726a94cb3352607b0057128beaa331808137f2f57a330b","src/rtt.rs":"4635dc0c401b78a1fd9d34da6f9bf7f6e7f5be3a57ed9716e0efc8f0f94f1e47","src/send_stream.rs":"5b12a5543dd55d0d506eb64f828883b9761722a1558f16ecb90ce5a43587a2ff","src/sender.rs":"043be47e97d050532f12a564e78605cff7ff23e07639ea06059ebd85e0748f2f","src/server.rs":"3ededa0afd5e6b6888fc5ac9ce48e35e12974c338c7985f2b840e9dc76af0062","src/stats.rs":"257ab1242ea2e6bfac0900e6c4bdad794bc67b666930323d24e022e46b9be82b","src/stream_id.rs":"fd07cbb81709a54bdb0659f676ef851cd145c004b817044ede5b21e54fdb60e4","src/streams.rs":"f2e393dc73cc85c8339cb94daf6a09d3bde4d33d820fd6623ddd6b3d727d5fd5","src/tparams.rs":"592f29c9e2d2a63ff68b024ce23274896ed8ae83192b76b91f5e2991246682cd","src/tracking.rs":"c8581318cd7be3ca94ef4482341cfc1fdb70f934966c63a69335cb0bf5bd292a","src/version.rs":"182484ed9ecc2e17cab73cc61914a86a2d206936cab313825ae76fd37eeade77","tests/common/mod.rs":"7f9437d5efc38f4b9cabfece575e9168580e78e8638f46e538de58607f46ebb8","tests/conn_vectors.rs":"997702f4d8b8fa3b987b33077a0eb325e968b25b61fb4703532f8d97e1d4c98c","tests/connection.rs":"c6755968255fb68795d9f1ae4ece73d7b674d8616d3512757309efd2c42c39d1","tests/network.rs":"04921aa5af583e842e6d2176a898fbfea747e831bbe292b5ef8441eaf546b93a","tests/retry.rs":"ace4a0baa36f7218c9942abc2b45b58f8c2dbd2b6004b469751e41b50f6f99d0","tests/server.rs":"9724460d7ac2f9d6af94baf6b3cf950900ae489412edc55d62609bacfcf02b09"},"package":null}
+diff --git a/third_party/rust/neqo-transport/src/crypto.rs b/third_party/rust/neqo-transport/src/crypto.rs
+index aca76b8bb9..3bfe7057bc 100644
+--- a/third_party/rust/neqo-transport/src/crypto.rs
++++ b/third_party/rust/neqo-transport/src/crypto.rs
+@@ -21,7 +21,7 @@ use neqo_crypto::{
+     TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256, TLS_CT_HANDSHAKE,
+     TLS_EPOCH_APPLICATION_DATA, TLS_EPOCH_HANDSHAKE, TLS_EPOCH_INITIAL, TLS_EPOCH_ZERO_RTT,
+     TLS_GRP_EC_SECP256R1, TLS_GRP_EC_SECP384R1, TLS_GRP_EC_SECP521R1, TLS_GRP_EC_X25519,
+-    TLS_GRP_KEM_XYBER768D00, TLS_VERSION_1_3,
++    TLS_GRP_KEM_MLKEM768X25519, TLS_VERSION_1_3,
+ };
+ 
+ use crate::{
+@@ -78,9 +78,10 @@ impl Crypto {
+         ])?;
+         match &mut agent {
+             Agent::Server(c) => {
+-                // Clients do not send xyber shares by default, but servers should accept them.
++                // Clients do not send mlkem768x25519 shares by default, but servers should accept
++                // them.
+                 c.set_groups(&[
+-                    TLS_GRP_KEM_XYBER768D00,
++                    TLS_GRP_KEM_MLKEM768X25519,
+                     TLS_GRP_EC_X25519,
+                     TLS_GRP_EC_SECP256R1,
+                     TLS_GRP_EC_SECP384R1,
+diff --git a/third_party/rust/neqo-transport/tests/connection.rs b/third_party/rust/neqo-transport/tests/connection.rs
+index 35167d0abd..7f9304e9c8 100644
+--- a/third_party/rust/neqo-transport/tests/connection.rs
++++ b/third_party/rust/neqo-transport/tests/connection.rs
+@@ -279,12 +279,12 @@ fn overflow_crypto() {
+ }
+ 
+ #[test]
+-fn test_handshake_xyber() {
++fn handshake_mlkem768x25519() {
+     let mut client = default_client();
+     let mut server = default_server();
+ 
+     client
+-        .set_groups(&[neqo_crypto::TLS_GRP_KEM_XYBER768D00])
++        .set_groups(&[neqo_crypto::TLS_GRP_KEM_MLKEM768X25519])
+         .ok();
+     client.send_additional_key_shares(0).ok();
+ 
+@@ -293,10 +293,10 @@ fn test_handshake_xyber() {
+     assert_eq!(*server.state(), State::Confirmed);
+     assert_eq!(
+         client.tls_info().unwrap().key_exchange(),
+-        neqo_crypto::TLS_GRP_KEM_XYBER768D00
++        neqo_crypto::TLS_GRP_KEM_MLKEM768X25519
+     );
+     assert_eq!(
+         server.tls_info().unwrap().key_exchange(),
+-        neqo_crypto::TLS_GRP_KEM_XYBER768D00
++        neqo_crypto::TLS_GRP_KEM_MLKEM768X25519
+     );
+ }
