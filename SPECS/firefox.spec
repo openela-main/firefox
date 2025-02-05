@@ -117,7 +117,13 @@ end}
 %global nodejs_build_req  nodejs
 
 %if 0%{?rhel} > 7 && 0%{?rhel} < 10
-%global use_gcc_ts        1
+  %global use_gcc_ts      1
+  %if 0%{?rhel} == 9 && %{rhel_minor_version} >= 6
+    # clang depends on gcc-toolset-14-gcc-c++
+    %global gts_version 14
+  %else
+    %global gts_version 13
+  %endif
 %endif
 
 %if 0%{?rhel} == 7
@@ -160,7 +166,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.6.0
+Version:              128.7.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -191,7 +197,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20241218.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20250129.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -469,10 +475,12 @@ BuildRequires:        xorg-x11-server-Xvfb
 %endif
 
 %if 0%{?use_gcc_ts}
-BuildRequires:        gcc-toolset-13-runtime
-BuildRequires:        gcc-toolset-13-binutils
-BuildRequires:        gcc-toolset-13-gcc
-BuildRequires:        gcc-toolset-13-gcc-plugin-annobin
+BuildRequires:        gcc-toolset-%{gts_version}-runtime
+BuildRequires:        gcc-toolset-%{gts_version}-binutils
+BuildRequires:        gcc-toolset-%{gts_version}-gcc
+BuildRequires:        gcc-toolset-%{gts_version}-gcc-plugin-annobin
+# Do not explicitly require gcc-toolset-%{gts_version}-gcc-g++ instead fail
+# when clang is upgraded to depend on a later toolset and adjust version.
 %endif
 
 Requires:             mozilla-filesystem
@@ -1465,7 +1473,7 @@ function install_rpms_to_current_dir() {
 # Enable toolsets
 set +e
 %if 0%{?use_gcc_ts}
-source scl_source enable gcc-toolset-13
+source scl_source enable gcc-toolset-%{gts_version}
 %endif
 %if 0%{?use_dts}
 source scl_source enable devtoolset-%{dts_version}
@@ -1975,9 +1983,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Jan 09 2025 Release Engineering <releng@openela.org> - 128.6.0
+* Wed Feb 05 2025 Release Engineering <releng@openela.org> - 128.7.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Jan 28 2025 Eike Rathke <erack@redhat.com> - 128.7.0-1
+- Update to 128.7.0 build1
 
 * Wed Dec 18 2024 Eike Rathke <erack@redhat.com> - 128.6.0-1
 - Update to 128.6.0 build1
