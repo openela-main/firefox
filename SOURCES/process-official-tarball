@@ -18,6 +18,9 @@ rm -vf ./process-tarball-dir/*/mobile/android/android-components/components/feat
 rm -vf ./process-tarball-dir/*/third_party/webkit/PerformanceTests/Speedometer3/resources/editors/dist/assets/codemirror-521de7ab.js
 rm -vf ./process-tarball-dir/*/third_party/python/pip/pip-24.0.dist-info/AUTHORS.txt
 
+# We uses system freetype2
+rm -vrf ./process-tarball-dir/*/modules/freetype2
+
 processed_tarball=${1/source/processed-source}
 
 cd ./process-tarball-dir
