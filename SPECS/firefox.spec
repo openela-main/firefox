@@ -156,7 +156,7 @@ end}
 # If set to .b2 or .b3 ... the processed source file needs to be renamed before upload, e.g.
 # firefox-102.8.0esr.b2.processed-source.tar.xz
 # When unset use processed source file name as is.
-##global buildnum .b2
+%global buildnum .b2
 
 %bcond_without langpacks
 
@@ -166,8 +166,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.8.0
-Release:              1%{?dist}
+Version:              128.9.0
+Release:              2%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -197,7 +197,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20250224.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20250331.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -244,6 +244,10 @@ Patch09:              rhbz-2131158-webrtc-nss-fix.patch
 Patch10:              build-ffvpx.patch
 Patch11:              build-disable-gamepad.patch
 Patch12:              firefox-system-nss-replace-xyber-with-mlkem.patch
+# Enabled vsync cause the black screen when running in Kiosk mode
+# This will be fixed in Firefox 140
+Patch13:              disable-vsync-for-kiosk.patch
+Patch14:              rhbz-71999-fips-youtube.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
@@ -521,7 +525,6 @@ Provides:             bundled(fastText)
 Provides:             bundled(fathom)
 Provides:             bundled(fdlibm)
 Provides:             bundled(ffvpx)
-Provides:             bundled(freetype2)
 Provides:             bundled(function2)
 Provides:             bundled(gbm)
 Provides:             bundled(gemmology)
@@ -1223,6 +1226,8 @@ echo "--------------------------------------------"
 %if 0%{?rhel} == 10
 %patch -P12 -p1 -b .system-nss-replace-xyber-with-mlkem
 %endif
+%patch -P13 -p1 -b .kiosk-vsync
+%patch -P14 -p1 -b .rhbz-71999-fips-youtube
 
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
 %if %{with_wasi_sdk}
@@ -1983,9 +1988,15 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Wed Mar 05 2025 Release Engineering <releng@openela.org> - 128.8.0
+* Thu Apr 03 2025 Release Engineering <releng@openela.org> - 128.9.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Mon Mar 31 2025 Eike Rathke <erack@redhat.com> - 128.9.0-2
+- Update to 128.9.0 build2
+
+* Tue Mar 25 2025 Eike Rathke <erack@redhat.com> - 128.9.0-1
+- Update to 128.9.0 build1
 
 * Mon Feb 24 2025 Eike Rathke <erack@redhat.com> - 128.8.0-1
 - Update to 128.8.0 build1

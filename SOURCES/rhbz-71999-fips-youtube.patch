@@ -1,0 +1,43 @@
+changeset:   781221:573380ae60a7
+tag:         tip
+user:        stransky <stransky@redhat.com>
+date:        Mon Mar 24 10:13:50 2025 +0100
+files:       dom/cache/CacheStorage.cpp dom/indexedDB/ActorsParent.cpp
+description:
+FIPS-youtube
+
+
+diff --git a/dom/cache/CacheStorage.cpp b/dom/cache/CacheStorage.cpp
+--- a/dom/cache/CacheStorage.cpp
++++ b/dom/cache/CacheStorage.cpp
+@@ -38,6 +38,7 @@
+ #include "nsURLParsers.h"
+ #include "js/Object.h"              // JS::GetClass
+ #include "js/PropertyAndElement.h"  // JS_DefineProperty
++#include "pk11pub.h"
+ 
+ namespace mozilla::dom::cache {
+ 
+@@ -581,7 +582,7 @@ bool CacheStorage::HasStorageAccess(UseC
+     if (!principal->IsSystemPrincipal() &&
+         principal->GetPrivateBrowsingId() !=
+             nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID &&
+-        !StaticPrefs::dom_cache_privateBrowsing_enabled()) {
++        (!StaticPrefs::dom_cache_privateBrowsing_enabled() || PK11_IsFIPS())) {
+       return false;
+     }
+   }
+diff --git a/dom/indexedDB/ActorsParent.cpp b/dom/indexedDB/ActorsParent.cpp
+--- a/dom/indexedDB/ActorsParent.cpp
++++ b/dom/indexedDB/ActorsParent.cpp
+@@ -14791,7 +14791,8 @@ nsresult FactoryOp::Open() {
+     mEnforcingQuota = mPersistenceType != PERSISTENCE_TYPE_PERSISTENT;
+ 
+     if (mOriginMetadata.mIsPrivate) {
+-      if (StaticPrefs::dom_indexedDB_privateBrowsing_enabled()) {
++      if (StaticPrefs::dom_indexedDB_privateBrowsing_enabled() &&
++          !PK11_IsFIPS()) {
+         // Explicitly disallow moz-extension urls from using the encrypted
+         // indexedDB storage mode when the caller is an extension (see Bug
+         // 1841806).
+
