@@ -109,8 +109,8 @@ index 107ea3dfbd954..dbac09274bb31 100644
  }
  
 -PipeWireNode::~PipeWireNode() {
--  spa_hook_remove(&node_listener_);
 -  pw_proxy_destroy(proxy_);
+-  spa_hook_remove(&node_listener_);
 -}
 -
  // static
