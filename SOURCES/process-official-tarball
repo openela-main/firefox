@@ -20,6 +20,8 @@ rm -vf ./process-tarball-dir/*/third_party/python/pip/pip-24.0.dist-info/AUTHORS
 
 # We uses system freetype2
 rm -vrf ./process-tarball-dir/*/modules/freetype2
+# We use system zlib
+rm -vrf ./process-tarball-dir/*/modules/zlib
 
 processed_tarball=${1/source/processed-source}
 
