@@ -166,7 +166,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.10.1
+Version:              128.11.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -197,7 +197,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20250519.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20250521.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -616,7 +616,6 @@ Provides:             bundled(woff2)
 Provides:             bundled(xsimd)
 Provides:             bundled(xz-embedded)
 Provides:             bundled(ycbcr)
-Provides:             bundled(zlib)
 Provides:             bundled(zstd)
 Provides:             bundled(Zycore)
 Provides:             bundled(Zydis)
@@ -1988,9 +1987,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Wed May 21 2025 Release Engineering <releng@openela.org> - 128.10.1
+* Thu May 29 2025 Release Engineering <releng@openela.org> - 128.11.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Wed May 21 2025 Eike Rathke <erack@redhat.com> - 128.11.0-1
+- Update to 128.11.0
 
 * Mon May 19 2025 Eike Rathke <erack@redhat.com> - 128.10.1-1
 - Update to 128.10.1
