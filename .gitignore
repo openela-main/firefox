@@ -1,7 +1,7 @@
-SOURCES/cbindgen-vendor.tar.xz
-SOURCES/firefox-128.11.0esr.processed-source.tar.xz
-SOURCES/firefox-langpacks-128.11.0esr-20250521.tar.xz
 SOURCES/mochitest-python.tar.gz
 SOURCES/nss-3.101.0-7.el8_2.src.rpm
 SOURCES/nss-3.101.0-7.el9_2.src.rpm
 SOURCES/wasi-sdk-20.tar.gz
+SOURCES/cbindgen-vendor.tar.xz
+SOURCES/firefox-128.12.0esr.processed-source.tar.xz
+SOURCES/firefox-langpacks-128.12.0esr-20250617.tar.xz
