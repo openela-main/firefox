@@ -166,8 +166,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              128.13.0
-Release:              1%{?dist}
+Version:              128.14.0
+Release:              2%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -197,7 +197,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20250715.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20250815.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -251,6 +251,7 @@ Patch14:              rhbz-71999-fips-youtube.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
+Patch52:              exceptionHandled-for-IO-error-processhandler.patch
 
 # -- Submitted upstream, not merged --
 Patch101:             mozilla-bmo1636168-fscreen.patch
@@ -1236,6 +1237,7 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 
 # -- Upstreamed patches --
 %patch -P51 -p1 -b .mozilla-bmo1170092
+%patch -P52 -p1 -b .exceptionHandled-for-IO-error-processhandler
 
 # -- Submitted upstream, not merged --
 %patch -P101 -p1 -b .mozilla-bmo1636168-fscreen
@@ -1994,9 +1996,15 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Jul 24 2025 Release Engineering <releng@openela.org> - 128.13.0
+* Mon Aug 25 2025 Release Engineering <releng@openela.org> - 128.14.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Fri Aug 15 2025 Jan Grulich <jgrulich@redhat.com> - 128.14.0-2
+- Add missing translations
+
+* Tue Aug 12 2025 Jan Grulich <jgrulich@redhat.com> - 128.14.0-1
+- Update to 128.14.0 build1
 
 * Tue Jul 15 2025 Eike Rathke <erack@redhat.com> - 128.13.0-1
 - Update to 128.13.0 build1

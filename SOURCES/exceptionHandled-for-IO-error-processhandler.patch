@@ -1,0 +1,29 @@
+diff -up firefox-140.1.0/testing/mozbase/mozprocess/mozprocess/processhandler.py.exceptionHandled-for-IO-error-processhandler firefox-140.1.0/testing/mozbase/mozprocess/mozprocess/processhandler.py
+--- firefox-140.1.0/testing/mozbase/mozprocess/mozprocess/processhandler.py.exceptionHandled-for-IO-error-processhandler	2025-07-14 19:14:55.000000000 +0200
++++ firefox-140.1.0/testing/mozbase/mozprocess/mozprocess/processhandler.py	2025-08-05 18:05:54.329479764 +0200
+@@ -1098,11 +1098,22 @@ class ProcessReader:
+ 
+     def _read_stream(self, stream, queue, callback):
+         sentinel = "" if isinstance(stream, io.TextIOBase) else b""
+-        for line in iter(stream.readline, sentinel):
+-            queue.put((line, callback))
++        try:
++            for line in iter(stream.readline, sentinel):
++                queue.put((line, callback))
++        except ValueError as e:
++            if "I/O operation on closed file" in str(e):
++                # Stream was closed by the process, this is normal
++                pass
++            else:
++                raise
+         # Give a chance to the reading loop to exit without a timeout.
+         queue.put((b"", None))
+-        stream.close()
++        try:
++            stream.close()
++        except ValueError:
++            # Stream might already be closed
++            pass
+ 
+     def start(self, proc):
+         queue = Queue()
