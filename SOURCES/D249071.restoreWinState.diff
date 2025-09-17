@@ -1,0 +1,53 @@
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -1762,10 +1762,16 @@
+ - name: browser.privatebrowsing.forceMediaMemoryCache
+   type: bool
+   value: false
+   mirror: always
+ 
++# Disable state restoration, allowing the kiosk desktop environment to manage state and position.
++- name: browser.restoreWindowState.disabled
++  type: bool
++  value: false
++  mirror: always
++
+ # Communicates the toolbar color to platform (for e.g., prefers-color-scheme).
+ #
+ # Returns whether the toolbar is dark (0), light (1), or system (2). The
+ # theming code overrides it if appropriate.
+ - name: browser.theme.toolbar-theme
+diff --git a/xpfe/appshell/AppWindow.cpp b/xpfe/appshell/AppWindow.cpp
+--- a/xpfe/appshell/AppWindow.cpp
++++ b/xpfe/appshell/AppWindow.cpp
+@@ -58,10 +58,11 @@
+ #include "mozilla/AutoRestore.h"
+ #include "mozilla/Preferences.h"
+ #include "mozilla/PresShell.h"
+ #include "mozilla/Services.h"
+ #include "mozilla/SpinEventLoopUntil.h"
++#include "mozilla/StaticPrefs_browser.h"
+ #include "mozilla/dom/BarProps.h"
+ #include "mozilla/dom/DOMRect.h"
+ #include "mozilla/dom/Element.h"
+ #include "mozilla/dom/Event.h"
+ #include "mozilla/dom/ScriptSettings.h"
+@@ -2393,10 +2394,16 @@
+   nsCOMPtr<dom::Element> docShellElement = GetWindowDOMElement();
+   if (!docShellElement) {
+     return;
+   }
+ 
++  // Disable state restoration, allowing the kiosk desktop environment
++  // to manage state and position.
++  if (StaticPrefs::browser_restoreWindowState_disabled()) {
++    return;
++  }
++
+   // Check if the window wants to persist anything.
+   nsAutoString persist;
+   docShellElement->GetAttr(nsGkAtoms::persist, persist);
+   if (persist.IsEmpty()) {
+     return;
+

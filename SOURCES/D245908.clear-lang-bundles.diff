@@ -1,0 +1,16 @@
+diff --git a/intl/strres/nsStringBundle.cpp b/intl/strres/nsStringBundle.cpp
+--- a/intl/strres/nsStringBundle.cpp
++++ b/intl/strres/nsStringBundle.cpp
+@@ -753,10 +753,11 @@
+                                const char16_t* aSomeData) {
+   if (strcmp("profile-do-change", aTopic) == 0 ||
+       strcmp("chrome-flush-caches", aTopic) == 0 ||
+       strcmp("intl:app-locales-changed", aTopic) == 0) {
+     flushBundleCache(/* ignoreShared = */ false);
++    mBundleMap.Clear();
+   } else if (strcmp("memory-pressure", aTopic) == 0) {
+     flushBundleCache(/* ignoreShared = */ true);
+   }
+ 
+   return NS_OK;
+

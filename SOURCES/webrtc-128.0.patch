@@ -1,7 +1,7 @@
-diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.cpp.webrtc firefox-128.2.0/dom/crypto/WebCryptoTask.cpp
---- firefox-128.2.0/dom/crypto/WebCryptoTask.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/crypto/WebCryptoTask.cpp	2024-09-30 21:42:30.750124316 +0200
-@@ -118,60 +118,6 @@ enum TelemetryAlgorithm {
+diff -up firefox-140.0/dom/crypto/WebCryptoTask.cpp.D225034.1750779491 firefox-140.0/dom/crypto/WebCryptoTask.cpp
+--- firefox-140.0/dom/crypto/WebCryptoTask.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/crypto/WebCryptoTask.cpp	2025-06-26 12:19:09.532341457 +0200
+@@ -120,60 +120,6 @@ enum TelemetryAlgorithm {
      }                                                \
    }
  
@@ -30,7 +30,7 @@ diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.cpp.webrtc firefox-128.2.0/dom
 -    Algorithm alg;
 -
 -    if (!alg.Init(aCx, value)) {
--      return NS_ERROR_DOM_SYNTAX_ERR;
+-      return NS_ERROR_DOM_TYPE_MISMATCH_ERR;
 -    }
 -
 -    aName = alg.mName;
@@ -62,7 +62,7 @@ diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.cpp.webrtc firefox-128.2.0/dom
  inline size_t MapHashAlgorithmNameToBlockSize(const nsString& aName) {
    if (aName.EqualsLiteral(WEBCRYPTO_ALG_SHA1) ||
        aName.EqualsLiteral(WEBCRYPTO_ALG_SHA256)) {
-@@ -2198,6 +2144,30 @@ class GenerateSymmetricKeyTask : public
+@@ -2488,6 +2434,30 @@ class GenerateSymmetricKeyTask : public
    virtual void Cleanup() override { mKey = nullptr; }
  };
  
@@ -90,13 +90,13 @@ diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.cpp.webrtc firefox-128.2.0/dom
 +  UniqueSECKEYPrivateKey mPrivateKey;
 +};
 +
- GenerateAsymmetricKeyTask::GenerateAsymmetricKeyTask(
-     nsIGlobalObject* aGlobal, JSContext* aCx, const ObjectOrString& aAlgorithm,
-     bool aExtractable, const Sequence<nsString>& aKeyUsages)
-diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.h.webrtc firefox-128.2.0/dom/crypto/WebCryptoTask.h
---- firefox-128.2.0/dom/crypto/WebCryptoTask.h.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/crypto/WebCryptoTask.h	2024-09-30 21:41:07.648369048 +0200
-@@ -175,31 +175,60 @@ class WebCryptoTask : public CancelableR
+ class DeriveX25519BitsTask : public ReturnArrayBufferViewTask {
+  public:
+   DeriveX25519BitsTask(JSContext* aCx, const ObjectOrString& aAlgorithm,
+diff -up firefox-140.0/dom/crypto/WebCryptoTask.h.D225034.1750779491 firefox-140.0/dom/crypto/WebCryptoTask.h
+--- firefox-140.0/dom/crypto/WebCryptoTask.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/crypto/WebCryptoTask.h	2025-06-26 12:14:42.300401357 +0200
+@@ -176,31 +176,60 @@ class WebCryptoTask : public CancelableR
    nsresult mRv;
  };
  
@@ -177,9 +177,9 @@ diff -up firefox-128.2.0/dom/crypto/WebCryptoTask.h.webrtc firefox-128.2.0/dom/c
  }  // namespace mozilla::dom
  
  #endif  // mozilla_dom_WebCryptoTask_h
-diff -up firefox-128.2.0/dom/media/webrtc/components.conf.webrtc firefox-128.2.0/dom/media/webrtc/components.conf
---- firefox-128.2.0/dom/media/webrtc/components.conf.webrtc	2024-09-30 21:41:07.649369081 +0200
-+++ firefox-128.2.0/dom/media/webrtc/components.conf	2024-09-30 21:41:07.649369081 +0200
+diff -up firefox-140.0/dom/media/webrtc/components.conf.D225034.1750779491 firefox-140.0/dom/media/webrtc/components.conf
+--- firefox-140.0/dom/media/webrtc/components.conf.D225034.1750779491	2025-06-26 12:14:42.300775330 +0200
++++ firefox-140.0/dom/media/webrtc/components.conf	2025-06-26 12:14:42.300775330 +0200
 @@ -0,0 +1,14 @@
 +# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
 +# vim: set filetype=python:
@@ -195,9 +195,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/components.conf.webrtc firefox-128.2.0
 +        'constructor': 'mozilla::dom::NewRTCCertService',
 +    },
 +]
-diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp
---- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp	2024-09-30 21:41:07.649369081 +0200
+diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp
+--- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp	2025-06-26 12:14:42.301060154 +0200
 @@ -104,13 +104,15 @@ class MediaTransportHandlerSTS : public
                           // via IPC anymore
                           const nsTArray<NrIceStunAddr>& aStunAddrs) override;
@@ -221,7 +221,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.webrtc
  
    void RemoveTransportsExcept(
        const std::set<std::string>& aTransportIds) override;
-@@ -799,14 +801,13 @@ void MediaTransportHandlerSTS::ActivateT
+@@ -804,14 +806,13 @@ void MediaTransportHandlerSTS::ActivateT
      const std::string& aTransportId, const std::string& aLocalUfrag,
      const std::string& aLocalPwd, size_t aComponentCount,
      const std::string& aUfrag, const std::string& aPassword,
@@ -239,7 +239,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.webrtc
         self = RefPtr<MediaTransportHandlerSTS>(this)]() {
          if (!mIceCtx) {
            return;  // Probably due to XPCOM shutdown
-@@ -814,7 +815,7 @@ void MediaTransportHandlerSTS::ActivateT
+@@ -819,7 +820,7 @@ void MediaTransportHandlerSTS::ActivateT
  
          MOZ_ASSERT(aComponentCount);
          RefPtr<DtlsIdentity> dtlsIdentity(
@@ -248,9 +248,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.webrtc
          if (!dtlsIdentity) {
            MOZ_ASSERT(false);
            return;
-diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h
---- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h	2024-09-30 21:41:07.650369114 +0200
+diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h
+--- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h	2025-06-26 12:14:42.301442663 +0200
 @@ -98,8 +98,8 @@ class MediaTransportHandler {
        const std::string& aTransportId, const std::string& aLocalUfrag,
        const std::string& aLocalPwd, size_t aComponentCount,
@@ -262,9 +262,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.webrtc f
        bool aPrivacyRequested) = 0;
  
    virtual void RemoveTransportsExcept(
-diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp
---- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp	2024-09-30 21:41:07.650369114 +0200
+diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp
+--- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp	2025-06-26 12:14:42.301675179 +0200
 @@ -269,17 +269,16 @@ void MediaTransportHandlerIPC::ActivateT
      const std::string& aTransportId, const std::string& aLocalUfrag,
      const std::string& aLocalPwd, size_t aComponentCount,
@@ -287,9 +287,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.web
                                          aDigests, aPrivacyRequested);
          }
        },
-diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h
---- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h	2024-09-30 21:41:07.650369114 +0200
+diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h
+--- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h	2025-06-26 12:14:42.301923105 +0200
 @@ -49,13 +49,15 @@ class MediaTransportHandlerIPC final : p
                           // this up internally
                           const nsTArray<NrIceStunAddr>& aStunAddrs) override;
@@ -313,9 +313,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.webrt
  
    void RemoveTransportsExcept(
        const std::set<std::string>& aTransportIds) override;
-diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp
---- firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp	2024-09-30 21:41:07.650369114 +0200
+diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp
+--- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp	2025-06-26 12:14:42.302133961 +0200
 @@ -174,12 +174,12 @@ mozilla::ipc::IPCResult MediaTransportPa
  mozilla::ipc::IPCResult MediaTransportParent::RecvActivateTransport(
      const string& transportId, const string& localUfrag, const string& localPwd,
@@ -333,10 +333,10 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.webrtc 
        privacyRequested);
    return ipc::IPCResult::Ok();
  }
-diff -up firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.webrtc firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
---- firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.webrtc	2024-08-26 16:23:35.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp	2024-09-30 21:41:07.650369114 +0200
-@@ -4353,9 +4353,8 @@ void PeerConnectionImpl::UpdateTransport
+diff -up firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
+--- firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp	2025-06-26 12:14:42.302823315 +0200
+@@ -4320,9 +4320,8 @@ void PeerConnectionImpl::UpdateTransport
          candidates.end());
    }
  
@@ -348,7 +348,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.webrtc fi
    if (NS_FAILED(rv)) {
      CSFLogError(LOGTAG, "%s: Failed to serialize DTLS identity: %d",
                  __FUNCTION__, (int)rv);
-@@ -4371,7 +4370,7 @@ void PeerConnectionImpl::UpdateTransport
+@@ -4338,7 +4337,7 @@ void PeerConnectionImpl::UpdateTransport
  
    mTransportHandler->ActivateTransport(
        transport.mTransportId, transport.mLocalUfrag, transport.mLocalPwd,
@@ -357,9 +357,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.webrtc fi
        transport.mDtls->GetRole() == JsepDtlsTransport::kJsepDtlsClient, digests,
        PrivacyRequested());
  
-diff -up firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h.webrtc firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h
---- firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/MediaTransportParent.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/MediaTransportParent.h
+--- firefox-140.0/dom/media/webrtc/MediaTransportParent.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/MediaTransportParent.h	2025-06-26 12:14:42.303449191 +0200
 @@ -40,9 +40,9 @@ class MediaTransportParent : public dom:
        const string& transportId, const string& localUfrag,
        const string& localPwd, const int& componentCount,
@@ -373,9 +373,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/MediaTransportParent.h.webrtc firefox-
    mozilla::ipc::IPCResult RecvRemoveTransportsExcept(
        const StringVector& transportIds);
    mozilla::ipc::IPCResult RecvStartIceChecks(const bool& isControlling,
-diff -up firefox-128.2.0/dom/media/webrtc/moz.build.webrtc firefox-128.2.0/dom/media/webrtc/moz.build
---- firefox-128.2.0/dom/media/webrtc/moz.build.webrtc	2024-08-26 16:23:34.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/moz.build	2024-09-30 21:41:07.650369114 +0200
+diff -up firefox-140.0/dom/media/webrtc/moz.build.D225034.1750779491 firefox-140.0/dom/media/webrtc/moz.build
+--- firefox-140.0/dom/media/webrtc/moz.build.D225034.1750779491	2025-06-17 18:15:14.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/moz.build	2025-06-26 12:14:42.303672821 +0200
 @@ -41,6 +41,18 @@ SOURCES += [
      "CubebDeviceEnumerator.cpp",
  ]
@@ -407,7 +407,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/moz.build.webrtc firefox-128.2.0/dom/m
          "RTCIdentityProviderRegistrar.cpp",
      ]
      # MediaEngineWebRTC.cpp needs to be built separately.
-@@ -113,7 +129,11 @@ EXPORTS.mozilla += [
+@@ -111,7 +127,11 @@ EXPORTS.mozilla += [
      "PeerIdentity.h",
  ]
  EXPORTS.mozilla.dom += [
@@ -419,9 +419,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/moz.build.webrtc firefox-128.2.0/dom/m
  ]
  
  include("/ipc/chromium/chromium-config.mozbuild")
-diff -up firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl.webrtc firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl
---- firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl.webrtc	2024-09-30 21:41:07.651369147 +0200
-+++ firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl	2024-09-30 21:41:07.650369114 +0200
+diff -up firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl.D225034.1750779491 firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl
+--- firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl.D225034.1750779491	2025-06-26 12:14:42.303932017 +0200
++++ firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl	2025-06-26 12:14:42.303932017 +0200
 @@ -0,0 +1,34 @@
 +/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 +/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -457,9 +457,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/nsIRTCCertService.idl.webrtc firefox-1
 +    // Get cert
 +    [notxpcom, nostdcall] RTCCertificatePromise getCertificate([const] in CertFingerprint aCertFingerprint);
 +};
-diff -up firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl.webrtc firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl
---- firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl.webrtc	2024-08-26 16:23:35.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl.D225034.1750779491 firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl
+--- firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl	2025-06-26 12:14:42.304154235 +0200
 @@ -62,8 +62,7 @@ parent:
                            int componentCount,
                            string remoteUfrag,
@@ -470,9 +470,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/PMediaTransport.ipdl.webrtc firefox-12
                            int authType,
                            bool dtlsClient,
                            DtlsDigestList digests,
-diff -up firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.webrtc firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl
---- firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.webrtc	2024-09-30 21:41:07.648369048 +0200
-+++ firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.D225034.1750779491 firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl
+--- firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.D225034.1750779491	2025-06-26 12:14:42.304369078 +0200
++++ firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl	2025-06-26 12:14:42.304369078 +0200
 @@ -0,0 +1,33 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -507,9 +507,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.webrtc
 +
 +}
 +}
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp
---- firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp.webrtc	2024-09-30 21:41:07.648369048 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertCache.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertCache.cpp
+--- firefox-140.0/dom/media/webrtc/RTCCertCache.cpp.D225034.1750779491	2025-06-26 12:14:42.304591095 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertCache.cpp	2025-06-26 12:14:42.304591095 +0200
 @@ -0,0 +1,48 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -559,9 +559,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertCache.cpp.webrtc firefox-128.2.
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertCache.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertCache.h
---- firefox-128.2.0/dom/media/webrtc/RTCCertCache.h.webrtc	2024-09-30 21:41:07.648369048 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertCache.h	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertCache.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertCache.h
+--- firefox-140.0/dom/media/webrtc/RTCCertCache.h.D225034.1750779491	2025-06-26 12:14:42.304801480 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertCache.h	2025-06-26 12:14:42.304801480 +0200
 @@ -0,0 +1,36 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -599,9 +599,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertCache.h.webrtc firefox-128.2.0/
 +}  // namespace mozilla::dom
 +
 +#endif  // mozilla_dom_CertCache_h
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp
---- firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc	2024-08-26 16:23:35.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp	2024-09-30 21:41:07.649369081 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertificate.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertificate.cpp
+--- firefox-140.0/dom/media/webrtc/RTCCertificate.cpp.D225034.1750779491	2025-06-17 18:15:14.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertificate.cpp	2025-06-26 12:38:54.418795430 +0200
 @@ -25,13 +25,12 @@
  #include "mozilla/UniquePtr.h"
  #include "mozilla/dom/BindingDeclarations.h"
@@ -624,8 +624,8 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 +#include "nsServiceManagerUtils.h"
  #include "pk11pub.h"
  #include "plarena.h"
- #include "secasn1.h"
-@@ -71,271 +71,203 @@ NS_INTERFACE_MAP_END
+ #include "sdp/SdpAttribute.h"
+@@ -72,196 +72,10 @@ NS_INTERFACE_MAP_END
    PRTime(PR_USEC_PER_SEC) * PRTime(60)  /*sec*/ \
        * PRTime(60) /*min*/ * PRTime(24) /*hours*/
  #define EXPIRATION_DEFAULT ONE_DAY* PRTime(30)
@@ -652,15 +652,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -      // certificate". This catches these cases.
 -      mEarlyRv = NS_ERROR_DOM_NOT_SUPPORTED_ERR;
 -    }
-+static PRTime ReadExpires(JSContext* aCx, const ObjectOrString& aOptions,
-+                          ErrorResult& aRv) {
-+  // This conversion might fail, but we don't really care; use the default.
-+  // If this isn't an object, or it doesn't coerce into the right type,
-+  // then we won't get the |expires| value.  Either will be caught later.
-+  RTCCertificateExpiration expiration;
-+  if (!aOptions.IsObject()) {
-+    return EXPIRATION_DEFAULT;
-   }
+-  }
 -
 - private:
 -  PRTime mExpires;
@@ -684,12 +676,8 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -    buf[sizeof(buf) - 1] = '\0';
 -
 -    return CERT_AsciiToName(buf);
-+  JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*aOptions.GetAsObject()));
-+  if (!expiration.Init(aCx, value)) {
-+    aRv.NoteJSContextException(aCx);
-+    return 0;
-   }
- 
+-  }
+-
 -  nsresult GenerateCertificate() {
 -    UniquePK11SlotInfo slot(PK11_GetInternalSlot());
 -    MOZ_ASSERT(slot.get());
@@ -698,77 +686,38 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -    if (!subjectName) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
 -    }
-+  if (!expiration.mExpires.WasPassed()) {
-+    return EXPIRATION_DEFAULT;
-+  }
-+  static const uint64_t max =
-+      static_cast<uint64_t>(EXPIRATION_MAX / PR_USEC_PER_MSEC);
-+  if (expiration.mExpires.Value() > max) {
-+    return EXPIRATION_MAX;
-+  }
-+  return static_cast<PRTime>(expiration.mExpires.Value() * PR_USEC_PER_MSEC);
-+}
- 
+-
 -    UniqueSECKEYPublicKey publicKey(mKeyPair->mPublicKey->GetPublicKey());
 -    UniqueCERTSubjectPublicKeyInfo spki(
 -        SECKEY_CreateSubjectPublicKeyInfo(publicKey.get()));
 -    if (!spki) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
 -    }
-+RTCCertificateMetadata::RTCCertificateMetadata()
-+    : mExpires(0),
-+      mSignatureAlg(SEC_OID_UNKNOWN),
-+      mMechanism(CKM_INVALID_MECHANISM),
-+      mRsaParams() {}
-+
-+nsresult RTCCertificateMetadata::Init(JSContext* aCx,
-+                                      const ObjectOrString& aAlgorithm,
-+                                      SSLKEAType* aAuthType, ErrorResult& aRv) {
-+  mExpires = ReadExpires(aCx, aAlgorithm, aRv);
-+  if (aRv.Failed()) {
-+    return NS_ERROR_DOM_UNKNOWN_ERR;
-+  }
- 
+-
 -    UniqueCERTCertificateRequest certreq(
 -        CERT_CreateCertificateRequest(subjectName.get(), spki.get(), nullptr));
 -    if (!certreq) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
 -    }
-+  mArena = UniquePLArenaPool(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
-+  if (!mArena) {
-+    return NS_ERROR_DOM_UNKNOWN_ERR;
-+  }
- 
+-
 -    PRTime now = PR_Now();
 -    PRTime notBefore = now - EXPIRATION_SLACK;
 -    mExpires += now;
-+  // Extract algorithm name
-+  nsresult rv = GetAlgorithmName(aCx, aAlgorithm, mAlgName);
-+  NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
- 
+-
 -    UniqueCERTValidity validity(CERT_CreateValidity(notBefore, mExpires));
 -    if (!validity) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
 -    }
-+  // Construct an appropriate KeyAlorithm
-+  if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_RSASSA_PKCS1)) {
-+    RootedDictionary<RsaHashedKeyGenParams> params(aCx);
-+    rv = Coerce(aCx, params, aAlgorithm);
-+    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
- 
+-
 -    unsigned long serial;
 -    // Note: This serial in principle could collide, but it's unlikely, and we
 -    // don't expect anyone to be validating certificates anyway.
 -    SECStatus rv = PK11_GenerateRandomOnSlot(
 -        slot.get(), reinterpret_cast<unsigned char*>(&serial), sizeof(serial));
 -    if (rv != SECSuccess) {
-+    // Pull relevant info
-+    uint32_t modulusLength = params.mModulusLength;
-+    CryptoBuffer publicExponent;
-+    if (!publicExponent.Assign(params.mPublicExponent)) {
-       return NS_ERROR_DOM_UNKNOWN_ERR;
-     }
- 
+-      return NS_ERROR_DOM_UNKNOWN_ERR;
+-    }
+-
 -    // NB: CERTCertificates created with CERT_CreateCertificate are not safe to
 -    // use with other NSS functions like CERT_DupCertificate.  The strategy
 -    // here is to create a tbsCertificate ("to-be-signed certificate"), encode
@@ -778,28 +727,17 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -        serial, subjectName.get(), validity.get(), certreq.get()));
 -    if (!tbsCertificate) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
-+    nsString hashName;
-+    rv = GetAlgorithmName(aCx, params.mHash, hashName);
-+    NS_ENSURE_SUCCESS(rv, rv);
-+    if (!hashName.EqualsLiteral(WEBCRYPTO_ALG_SHA256)) {
-+      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-     }
- 
+-    }
+-
 -    MOZ_ASSERT(mSignatureAlg != SEC_OID_UNKNOWN);
 -    PLArenaPool* arena = tbsCertificate->arena;
-+    mMechanism = CKM_RSA_PKCS_KEY_PAIR_GEN;
- 
+-
 -    rv = SECOID_SetAlgorithmID(arena, &tbsCertificate->signature, mSignatureAlg,
 -                               nullptr);
 -    if (rv != SECSuccess) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
-+    // Set up params struct
-+    mRsaParams.keySizeInBits = modulusLength;
-+    bool converted = publicExponent.GetBigIntValue(mRsaParams.pe);
-+    if (!converted) {
-+      return NS_ERROR_DOM_INVALID_ACCESS_ERR;
-     }
- 
+-    }
+-
 -    // Set version to X509v3.
 -    *(tbsCertificate->version.data) = SEC_CERTIFICATE_VERSION_3;
 -    tbsCertificate->version.len = 1;
@@ -808,37 +746,25 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -    if (!SEC_ASN1EncodeItem(arena, &innerDER, tbsCertificate.get(),
 -                            SEC_ASN1_GET(CERT_CertificateTemplate))) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
-+    auto sz = static_cast<size_t>(mRsaParams.keySizeInBits);
-+    if (sz < RTCCertificateMinRsaSize) {
-+      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-     }
- 
+-    }
+-
 -    SECItem* certDer = PORT_ArenaZNew(arena, SECItem);
 -    if (!certDer) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
 -    }
-+    SerializeRSAParam(&mParam, &mRsaParams);
- 
+-
 -    UniqueSECKEYPrivateKey privateKey(mKeyPair->mPrivateKey->GetPrivateKey());
 -    rv = SEC_DerSignData(arena, certDer, innerDER.data, innerDER.len,
 -                         privateKey.get(), mSignatureAlg);
 -    if (rv != SECSuccess) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
 -    }
-+    mSignatureAlg = SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION;
-+    *aAuthType = ssl_kea_rsa;
-+  } else if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_ECDSA)) {
-+    RootedDictionary<EcKeyGenParams> params(aCx);
-+    rv = Coerce(aCx, params, aAlgorithm);
-+    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
- 
+-
 -    mCertificate.reset(CERT_NewTempCertificate(CERT_GetDefaultCertDB(), certDer,
 -                                               nullptr, false, true));
 -    if (!mCertificate) {
 -      return NS_ERROR_DOM_UNKNOWN_ERR;
-+    if (!NormalizeToken(params.mNamedCurve, mNamedCurve)) {
-+      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-     }
+-    }
 -    return NS_OK;
 -  }
 -
@@ -866,14 +792,11 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -      mSignatureAlg = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
 -      mAuthType = ssl_kea_ecdh;
 -    } else {
-+    mMechanism = CKM_EC_KEY_PAIR_GEN;
-+    if (!SerializeECParams(&mParam,
-+                           CreateECParamsForCurve(mNamedCurve, mArena.get()))) {
-       return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-     }
+-      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
+-    }
 -    return NS_OK;
 -  }
- 
+-
 -  nsresult DoCrypto() override {
 -    nsresult rv = GenerateAsymmetricKeyTask::DoCrypto();
 -    NS_ENSURE_SUCCESS(rv, rv);
@@ -882,14 +805,8 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -    NS_ENSURE_SUCCESS(rv, rv);
 -
 -    return NS_OK;
-+    // We only support good curves in WebCrypto.
-+    // If that ever changes, check that a good one was chosen.
-+    mSignatureAlg = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
-+    *aAuthType = ssl_kea_ecdh;
-+  } else {
-+    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-   }
- 
+-  }
+-
 -  virtual void Resolve() override {
 -    // Make copies of the private key and certificate, otherwise, when this
 -    // object is deleted, the structures they reference will be deleted too.
@@ -902,39 +819,104 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 -  }
 -};
 -
--static PRTime ReadExpires(JSContext* aCx, const ObjectOrString& aOptions,
--                          ErrorResult& aRv) {
--  // This conversion might fail, but we don't really care; use the default.
--  // If this isn't an object, or it doesn't coerce into the right type,
--  // then we won't get the |expires| value.  Either will be caught later.
--  RTCCertificateExpiration expiration;
--  if (!aOptions.IsObject()) {
--    return EXPIRATION_DEFAULT;
--  }
--  JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*aOptions.GetAsObject()));
--  if (!expiration.Init(aCx, value)) {
--    aRv.NoteJSContextException(aCx);
--    return 0;
--  }
-+  return NS_OK;
-+}
- 
--  if (!expiration.mExpires.WasPassed()) {
--    return EXPIRATION_DEFAULT;
--  }
--  static const uint64_t max =
--      static_cast<uint64_t>(EXPIRATION_MAX / PR_USEC_PER_MSEC);
--  if (expiration.mExpires.Value() > max) {
--    return EXPIRATION_MAX;
--  }
--  return static_cast<PRTime>(expiration.mExpires.Value() * PR_USEC_PER_MSEC);
-+RefPtr<RTCCertFingerprintPromise> RTCCertificateMetadata::Generate(
-+    nsCOMPtr<nsIRTCCertService> aCertService) {
-+  return aCertService->GenerateCertificate(mParam, mExpires, mMechanism,
-+                                           mSignatureAlg);
+ static PRTime ReadExpires(JSContext* aCx, const ObjectOrString& aOptions,
+                           ErrorResult& aRv) {
+   // This conversion might fail, but we don't really care; use the default.
+@@ -288,46 +102,166 @@ static PRTime ReadExpires(JSContext* aCx
+   return static_cast<PRTime>(expiration.mExpires.Value() * PR_USEC_PER_MSEC);
  }
  
 -already_AddRefed<Promise> RTCCertificate::GenerateCertificate(
++RTCCertificateMetadata::RTCCertificateMetadata()
++    : mExpires(0),
++      mSignatureAlg(SEC_OID_UNKNOWN),
++      mMechanism(CKM_INVALID_MECHANISM),
++      mRsaParams() {}
++
++nsresult RTCCertificateMetadata::Init(JSContext* aCx,
++                                      const ObjectOrString& aAlgorithm,
++                                      SSLKEAType* aAuthType, ErrorResult& aRv) {
++  mExpires = ReadExpires(aCx, aAlgorithm, aRv);
++  if (aRv.Failed()) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  mArena = UniquePLArenaPool(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
++  if (!mArena) {
++    return NS_ERROR_DOM_UNKNOWN_ERR;
++  }
++
++  // Extract algorithm name
++  nsresult rv = GetAlgorithmName(aCx, aAlgorithm, mAlgName);
++  NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
++
++  // Construct an appropriate KeyAlorithm
++  if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_RSASSA_PKCS1)) {
++    RootedDictionary<RsaHashedKeyGenParams> params(aCx);
++    rv = Coerce(aCx, params, aAlgorithm);
++    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
++  
++    // Pull relevant info
++    uint32_t modulusLength = params.mModulusLength;
++    CryptoBuffer publicExponent;
++    if (!publicExponent.Assign(params.mPublicExponent)) {
++
++      return NS_ERROR_DOM_UNKNOWN_ERR;
++    }
++
++    nsString hashName;
++    rv = GetAlgorithmName(aCx, params.mHash, hashName);
++    NS_ENSURE_SUCCESS(rv, rv);
++    if (!hashName.EqualsLiteral(WEBCRYPTO_ALG_SHA256)) {
++      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
++    }
++
++    mMechanism = CKM_RSA_PKCS_KEY_PAIR_GEN;
++    // Set up params struct
++    mRsaParams.keySizeInBits = modulusLength;
++    bool converted = publicExponent.GetBigIntValue(mRsaParams.pe);
++    if (!converted) {
++      return NS_ERROR_DOM_INVALID_ACCESS_ERR;
++    }
++    
++    auto sz = static_cast<size_t>(mRsaParams.keySizeInBits);
++    if (sz < RTCCertificateMinRsaSize) {
++      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
++    }
++
++    SerializeRSAParam(&mParam, &mRsaParams);
++
++    mSignatureAlg = SEC_OID_PKCS1_SHA256_WITH_RSA_ENCRYPTION;
++    *aAuthType = ssl_kea_rsa;
++  } else if (mAlgName.EqualsLiteral(WEBCRYPTO_ALG_ECDSA)) {
++    RootedDictionary<EcKeyGenParams> params(aCx);
++    rv = Coerce(aCx, params, aAlgorithm);
++    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
++    if (!NormalizeToken(params.mNamedCurve, mNamedCurve)) {
++      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
++    }
++    mMechanism = CKM_EC_KEY_PAIR_GEN;
++    if (!SerializeECParams(&mParam,
++                           CreateECParamsForCurve(mNamedCurve, mArena.get()))) {
++      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
++    }
++
++    // We only support good curves in WebCrypto.
++    // If that ever changes, check that a good one was chosen.
++    mSignatureAlg = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
++    *aAuthType = ssl_kea_ecdh;
++  } else {
++    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
++  }
++  return NS_OK;
++}
++
++RefPtr<RTCCertFingerprintPromise> RTCCertificateMetadata::Generate(
++    nsCOMPtr<nsIRTCCertService> aCertService) {
++  return aCertService->GenerateCertificate(mParam, mExpires, mMechanism,
++                                          mSignatureAlg);
++}
++
 +already_AddRefed<Promise> RTCCertificate::Generate(
      const GlobalObject& aGlobal, const ObjectOrString& aOptions,
 -    ErrorResult& aRv, JS::Compartment* aCompartment) {
@@ -959,6 +941,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 +    }
      return nullptr;
    }
++ 
  
 -  PRTime expires = ReadExpires(aGlobal.Context(), aOptions, aRv);
 -  if (aRv.Failed()) {
@@ -1034,6 +1017,11 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
 +  */
 +}
  
+ void RTCCertificate::GetFingerprints(
+     nsTArray<dom::RTCDtlsFingerprint>& aFingerprintsOut) {
+@@ -357,13 +291,10 @@ void RTCCertificate::GetFingerprints(
+ }
+ 
  RefPtr<DtlsIdentity> RTCCertificate::CreateDtlsIdentity() const {
 -  if (!mPrivateKey || !mCertificate) {
 +  if (!mCertificate) {
@@ -1047,7 +1035,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
    return id;
  }
  
-@@ -344,17 +276,10 @@ JSObject* RTCCertificate::WrapObject(JSC
+@@ -372,17 +303,10 @@ JSObject* RTCCertificate::WrapObject(JSC
    return RTCCertificate_Binding::Wrap(aCx, this, aGivenProto);
  }
  
@@ -1069,7 +1057,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
  }
  
  bool RTCCertificate::WriteCertificate(JSStructuredCloneWriter* aWriter) const {
-@@ -370,27 +295,23 @@ bool RTCCertificate::WriteCertificate(JS
+@@ -398,27 +322,23 @@ bool RTCCertificate::WriteCertificate(JS
  
  bool RTCCertificate::WriteStructuredClone(
      JSContext* aCx, JSStructuredCloneWriter* aWriter) const {
@@ -1104,7 +1092,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
  }
  
  bool RTCCertificate::ReadCertificate(JSStructuredCloneReader* aReader) {
-@@ -428,7 +349,8 @@ already_AddRefed<RTCCertificate> RTCCert
+@@ -456,7 +376,8 @@ already_AddRefed<RTCCertificate> RTCCert
    }
    cert->mExpires = static_cast<PRTime>(high) << 32 | low;
  
@@ -1114,9 +1102,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.cpp.webrtc firefox-128.
      return nullptr;
    }
  
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertificate.h
---- firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc	2024-08-26 16:23:35.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertificate.h	2024-09-30 21:41:07.649369081 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertificate.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertificate.h
+--- firefox-140.0/dom/media/webrtc/RTCCertificate.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertificate.h	2025-06-26 12:42:14.067026422 +0200
 @@ -15,7 +15,11 @@
  #include "mozilla/AlreadyAddRefed.h"
  #include "mozilla/Assertions.h"
@@ -1129,10 +1117,11 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc firefox-128.2.
  #include "nsIGlobalObject.h"
  #include "nsISupports.h"
  #include "nsWrapperCache.h"
-@@ -41,6 +45,26 @@ class GlobalObject;
+@@ -40,6 +44,27 @@ namespace dom {
+ class GlobalObject;
  class ObjectOrString;
  class Promise;
- 
++
 +class RTCCertificateMetadata {
 + public:
 +  RTCCertificateMetadata();
@@ -1153,10 +1142,10 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc firefox-128.2.
 +  nsString mAlgName;
 +};
 +
+ struct RTCDtlsFingerprint;
+ 
  class RTCCertificate final : public nsISupports, public nsWrapperCache {
-  public:
-   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-@@ -52,9 +76,6 @@ class RTCCertificate final : public nsIS
+@@ -53,9 +78,6 @@ class RTCCertificate final : public nsIS
        ErrorResult& aRv, JS::Compartment* aCompartment = nullptr);
  
    explicit RTCCertificate(nsIGlobalObject* aGlobal);
@@ -1166,7 +1155,7 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc firefox-128.2.
  
    nsIGlobalObject* GetParentObject() const { return mGlobal; }
    virtual JSObject* WrapObject(JSContext* aCx,
-@@ -76,20 +97,29 @@ class RTCCertificate final : public nsIS
+@@ -78,21 +100,30 @@ class RTCCertificate final : public nsIS
        JSStructuredCloneReader* aReader);
  
   private:
@@ -1197,14 +1186,15 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertificate.h.webrtc firefox-128.2.
    UniqueCERTCertificate mCertificate;
 -  SSLKEAType mAuthType;
 -  PRTime mExpires;
+   nsTArray<RTCDtlsFingerprint> mFingerprints;
 +  SSLKEAType mAuthType = ssl_kea_null;
 +  PRTime mExpires = 0;
  };
  
  }  // namespace dom
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp
---- firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp.webrtc	2024-09-30 21:41:07.648369048 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertService.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertService.cpp
+--- firefox-140.0/dom/media/webrtc/RTCCertService.cpp.D225034.1750779491	2025-06-26 12:14:42.306004069 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertService.cpp	2025-06-26 12:14:42.306004069 +0200
 @@ -0,0 +1,154 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -1360,9 +1350,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertService.cpp.webrtc firefox-128.
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp
---- firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp.webrtc	2024-09-30 21:41:07.648369048 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp
+--- firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.1750779491	2025-06-26 12:14:42.306223801 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp	2025-06-26 12:14:42.306223801 +0200
 @@ -0,0 +1,77 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -1441,9 +1431,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.cpp.webrtc firefox-
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h
---- firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h.webrtc	2024-09-30 21:41:07.649369081 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h	2024-09-30 21:41:07.649369081 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceData.h
+--- firefox-140.0/dom/media/webrtc/RTCCertServiceData.h.D225034.1750779491	2025-06-26 12:14:42.306399401 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertServiceData.h	2025-06-26 12:14:42.306399401 +0200
 @@ -0,0 +1,105 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -1550,9 +1540,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceData.h.webrtc firefox-12
 +}  // namespace mozilla
 +
 +#endif  // mozilla_dom_RTCCertServiceGlobal_h_
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertService.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertService.h
---- firefox-128.2.0/dom/media/webrtc/RTCCertService.h.webrtc	2024-09-30 21:41:07.648369048 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertService.h	2024-09-30 21:41:07.648369048 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertService.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertService.h
+--- firefox-140.0/dom/media/webrtc/RTCCertService.h.D225034.1750779491	2025-06-26 12:14:42.306588336 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertService.h	2025-06-26 12:14:42.306588336 +0200
 @@ -0,0 +1,49 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -1603,9 +1593,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertService.h.webrtc firefox-128.2.
 +}  // namespace mozilla::dom
 +
 +#endif  // mozilla_dom_CertServiceChild_h
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp
---- firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp.webrtc	2024-09-30 21:41:07.649369081 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp	2024-09-30 21:41:07.649369081 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp
+--- firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779491	2025-06-26 12:14:42.306799462 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp	2025-06-26 12:14:42.306799462 +0200
 @@ -0,0 +1,353 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -1960,9 +1950,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.cpp.webrtc firefo
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h.webrtc firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h
---- firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h.webrtc	2024-09-30 21:41:07.649369081 +0200
-+++ firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h	2024-09-30 21:41:07.649369081 +0200
+diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h
+--- firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h.D225034.1750779491	2025-06-26 12:14:42.307072966 +0200
++++ firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h	2025-06-26 12:14:42.307072966 +0200
 @@ -0,0 +1,42 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -2006,9 +1996,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/RTCCertServiceParent.h.webrtc firefox-
 +}  // namespace mozilla::dom
 +
 +#endif  // mozilla_dom_CertServiceTransactionParent_h
-diff -up firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp.webrtc firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp
---- firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp.webrtc	2024-08-26 16:23:35.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp	2024-09-30 21:41:07.651369147 +0200
+diff -up firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp
+--- firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp	2025-06-26 12:14:42.307331702 +0200
 @@ -17,136 +17,19 @@
  #include "sslerr.h"
  
@@ -2189,9 +2179,9 @@ diff -up firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.cpp.webrtc fire
 +}
 +
  }  // namespace mozilla
-diff -up firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h.webrtc firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h
---- firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h.webrtc	2024-08-26 16:23:35.000000000 +0200
-+++ firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h	2024-09-30 21:41:07.651369147 +0200
+diff -up firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h
+--- firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
++++ firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h	2025-06-26 12:14:42.307559680 +0200
 @@ -10,6 +10,7 @@
  #include <vector>
  
@@ -2247,10 +2237,10 @@ diff -up firefox-128.2.0/dom/media/webrtc/transport/dtlsidentity.h.webrtc firefo
    UniqueSECKEYPrivateKey private_key_;
    UniqueCERTCertificate cert_;
    SSLKEAType auth_type_;
-diff -up firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp.webrtc firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp
---- firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp.webrtc	2024-08-26 16:23:36.000000000 +0200
-+++ firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp	2024-09-30 21:41:07.651369147 +0200
-@@ -57,6 +57,7 @@
+diff -up firefox-140.0/ipc/glue/BackgroundParentImpl.cpp.D225034.1750779491 firefox-140.0/ipc/glue/BackgroundParentImpl.cpp
+--- firefox-140.0/ipc/glue/BackgroundParentImpl.cpp.D225034.1750779491	2025-06-17 18:15:14.000000000 +0200
++++ firefox-140.0/ipc/glue/BackgroundParentImpl.cpp	2025-06-26 12:14:42.307823345 +0200
+@@ -59,6 +59,7 @@
  #include "mozilla/dom/quota/QuotaParent.h"
  #include "mozilla/dom/simpledb/ActorsParent.h"
  #include "mozilla/dom/VsyncParent.h"
@@ -2258,10 +2248,10 @@ diff -up firefox-128.2.0/ipc/glue/BackgroundParentImpl.cpp.webrtc firefox-128.2.
  #include "mozilla/ipc/BackgroundParent.h"
  #include "mozilla/ipc/BackgroundUtils.h"
  #include "mozilla/ipc/Endpoint.h"
-diff -up firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.webrtc firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp
---- firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.webrtc	2024-08-26 16:23:42.000000000 +0200
-+++ firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp	2024-09-30 21:41:07.651369147 +0200
-@@ -197,13 +197,15 @@ class LoopbackTransport : public MediaTr
+diff -up firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.D225034.1750779491 firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp
+--- firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.D225034.1750779491	2025-06-17 18:15:19.000000000 +0200
++++ firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp	2025-06-26 12:14:42.308182079 +0200
+@@ -200,13 +200,15 @@ class LoopbackTransport : public MediaTr
                           // this up internally
                           const nsTArray<NrIceStunAddr>& aStunAddrs) override {}
  
@@ -2284,9 +2274,9 @@ diff -up firefox-128.2.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp
  
    void RemoveTransportsExcept(
        const std::set<std::string>& aTransportIds) override {}
-diff -up firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl.webrtc firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl
---- firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl.webrtc	2024-08-26 16:23:42.000000000 +0200
-+++ firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl	2024-09-30 21:41:07.651369147 +0200
+diff -up firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl.D225034.1750779491 firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl
+--- firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl.D225034.1750779491	2025-06-17 18:15:20.000000000 +0200
++++ firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl	2025-06-26 12:14:42.308456975 +0200
 @@ -10,6 +10,8 @@ include protocol PBackgroundDataBridge;
  include protocol PMediaTransport;
  #endif // MOZ_WEBRTC
@@ -2304,9 +2294,9 @@ diff -up firefox-128.2.0/netwerk/ipc/PSocketProcessBridge.ipdl.webrtc firefox-12
  };
  
  }
-diff -up firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp.webrtc firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp
---- firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp.webrtc	2024-08-26 16:23:43.000000000 +0200
-+++ firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp	2024-09-30 21:41:07.651369147 +0200
+diff -up firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp.D225034.1750779491 firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp
+--- firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp.D225034.1750779491	2025-06-17 18:15:20.000000000 +0200
++++ firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp	2025-06-26 12:14:42.308665677 +0200
 @@ -9,6 +9,7 @@
  #ifdef MOZ_WEBRTC
  #  include "mozilla/dom/MediaTransportParent.h"
@@ -2353,9 +2343,9 @@ diff -up firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.cpp.webrtc firefo
  void SocketProcessBridgeParent::ActorDestroy(ActorDestroyReason aReason) {
    // See bug 1846478. We might be able to remove this dispatch.
    GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
-diff -up firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h.webrtc firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h
---- firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h.webrtc	2024-08-26 16:23:43.000000000 +0200
-+++ firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h	2024-09-30 21:41:07.651369147 +0200
+diff -up firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h.D225034.1750779491 firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h
+--- firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h.D225034.1750779491	2025-06-17 18:15:20.000000000 +0200
++++ firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h	2025-06-26 12:14:42.308878987 +0200
 @@ -29,6 +29,9 @@ class SocketProcessBridgeParent final :
        Endpoint<PMediaTransportParent>&& aEndpoint);
  #endif
@@ -2366,4 +2356,3 @@ diff -up firefox-128.2.0/netwerk/ipc/SocketProcessBridgeParent.h.webrtc firefox-
    void ActorDestroy(ActorDestroyReason aReason) override;
  
   private:
-diff -up firefox-128.2.0/third_party/libwebrtc/examples/androidtests/third_party/README.webrtc firefox-128.2.0/third_party/libwebrtc/examples/androidtests/third_party/README

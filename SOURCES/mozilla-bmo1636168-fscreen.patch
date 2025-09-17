@@ -1,29 +1,28 @@
-diff -up firefox-128.0/widget/gtk/nsWindow.cpp.mozilla-bmo1636168-fscreen firefox-128.0/widget/gtk/nsWindow.cpp
---- firefox-128.0/widget/gtk/nsWindow.cpp.mozilla-bmo1636168-fscreen	2024-07-04 18:20:43.000000000 +0200
-+++ firefox-128.0/widget/gtk/nsWindow.cpp	2024-07-16 14:54:21.026716936 +0200
-@@ -174,7 +174,8 @@ const gint kEvents = GDK_TOUCHPAD_GESTUR
-                      GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK |
-                      GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
-                      GDK_SMOOTH_SCROLL_MASK | GDK_TOUCH_MASK | GDK_SCROLL_MASK |
--                     GDK_POINTER_MOTION_MASK | GDK_PROPERTY_CHANGE_MASK;
-+                     GDK_POINTER_MOTION_MASK | GDK_PROPERTY_CHANGE_MASK |
-+                     GDK_FOCUS_CHANGE_MASK;
+diff -up firefox-140.0/widget/gtk/nsWindow.cpp.mozilla-bmo1636168-fscreen firefox-140.0/widget/gtk/nsWindow.cpp
+--- firefox-140.0/widget/gtk/nsWindow.cpp.mozilla-bmo1636168-fscreen	2025-06-02 15:27:00.000000000 +0200
++++ firefox-140.0/widget/gtk/nsWindow.cpp	2025-06-12 10:23:04.789578675 +0200
+@@ -196,7 +196,7 @@ constexpr gint kEvents =
+     GDK_VISIBILITY_NOTIFY_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK |
+     GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_SMOOTH_SCROLL_MASK |
+     GDK_TOUCH_MASK | GDK_SCROLL_MASK | GDK_POINTER_MOTION_MASK |
+-    GDK_PROPERTY_CHANGE_MASK;
++    GDK_PROPERTY_CHANGE_MASK | GDK_FOCUS_CHANGE_MASK;
  
  /* utility functions */
  static bool is_mouse_in_window(GdkWindow* aWindow, gdouble aMouseX,
-@@ -430,7 +431,8 @@ nsWindow::nsWindow()
+@@ -454,7 +454,8 @@ nsWindow::nsWindow()
        mResizedAfterMoveToRect(false),
        mConfiguredClearColor(false),
        mGotNonBlankPaint(false),
 -      mNeedsToRetryCapturingMouse(false) {
 +      mNeedsToRetryCapturingMouse(false),
 +      mPendingFullscreen(false) {
-   mWindowType = WindowType::Child;
    mSizeConstraints.mMaxSize = GetSafeWindowSize(mSizeConstraints.mMaxSize);
  
-@@ -5374,6 +5376,19 @@ void nsWindow::OnWindowStateEvent(GtkWid
-       ClearTransparencyBitmap();
-     }
+   if (!gGlobalsInitialized) {
+@@ -5424,6 +5425,19 @@ void nsWindow::OnWindowStateEvent(GtkWid
+   if (mSizeMode != oldSizeMode && mWidgetListener) {
+     mWidgetListener->SizeModeChanged(mSizeMode);
    }
 +
 +  // Hack to ensure window switched to fullscreen - avoid to fail when starting
@@ -41,7 +40,7 @@ diff -up firefox-128.0/widget/gtk/nsWindow.cpp.mozilla-bmo1636168-fscreen firefo
  }
  
  void nsWindow::OnDPIChanged() {
-@@ -7526,6 +7541,7 @@ nsresult nsWindow::MakeFullScreen(bool a
+@@ -7239,6 +7253,7 @@ nsresult nsWindow::MakeFullScreen(bool a
  
      if (mKioskMonitor.isSome()) {
        KioskLockOnMonitor();
@@ -49,10 +48,10 @@ diff -up firefox-128.0/widget/gtk/nsWindow.cpp.mozilla-bmo1636168-fscreen firefo
      } else {
        gtk_window_fullscreen(GTK_WINDOW(mShell));
      }
-diff -up firefox-128.0/widget/gtk/nsWindow.h.mozilla-bmo1636168-fscreen firefox-128.0/widget/gtk/nsWindow.h
---- firefox-128.0/widget/gtk/nsWindow.h.mozilla-bmo1636168-fscreen	2024-07-04 18:20:43.000000000 +0200
-+++ firefox-128.0/widget/gtk/nsWindow.h	2024-07-16 14:25:51.636952919 +0200
-@@ -758,6 +758,7 @@ class nsWindow final : public nsBaseWidg
+diff -up firefox-140.0/widget/gtk/nsWindow.h.mozilla-bmo1636168-fscreen firefox-140.0/widget/gtk/nsWindow.h
+--- firefox-140.0/widget/gtk/nsWindow.h.mozilla-bmo1636168-fscreen	2025-06-02 15:27:00.000000000 +0200
++++ firefox-140.0/widget/gtk/nsWindow.h	2025-06-12 10:18:42.354025723 +0200
+@@ -786,6 +786,7 @@ class nsWindow final : public nsBaseWidg
     * move-to-rect callback we set mMovedAfterMoveToRect/mResizedAfterMoveToRect.
     */
    bool mWaitingForMoveToRectCallback : 1;

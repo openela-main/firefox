@@ -1,9 +1,7 @@
-diff --git a/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c b/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
---- a/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
-+++ b/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
-@@ -54,10 +54,11 @@
- #include "crypto_types.h"
- #include "cipher_types.h"
+diff -up firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c.D224588 firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c
+--- firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c.D224588	2025-06-25 11:50:45.852066851 +0200
++++ firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c	2025-06-25 11:50:45.908794290 +0200
+@@ -56,6 +56,7 @@
  #include "cipher_test_cases.h"
  #include <secerr.h>
  #include <nspr.h>
@@ -11,14 +9,10 @@ diff --git a/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c b/third_party/l
  
  srtp_debug_module_t srtp_mod_aes_gcm = {
      0,            /* debugging is off by default */
-     "aes gcm nss" /* printable module name       */
- };
-@@ -211,12 +212,17 @@
-     if (!slot) {
-         return (srtp_err_status_cipher_fail);
-     }
- 
-     SECItem key_item = { siBuffer, (unsigned char *)key, c->key_size };
+@@ -215,8 +216,13 @@ static srtp_err_status_t srtp_aes_gcm_ns
+     /* explicitly cast away const of key */
+     SECItem key_item = { siBuffer, (unsigned char *)(uintptr_t)key,
+                          c->key_size };
 -    c->key = PK11_ImportSymKey(slot, CKM_AES_GCM, PK11_OriginUnwrap,
 -                               CKA_ENCRYPT, &key_item, NULL);
 +    if (PK11_IsFIPS()) {
@@ -31,14 +25,10 @@ diff --git a/third_party/libsrtp/src/crypto/cipher/aes_gcm_nss.c b/third_party/l
      PK11_FreeSlot(slot);
  
      if (!c->key) {
-         return (srtp_err_status_cipher_fail);
-     }
-diff --git a/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c b/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c
---- a/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c
-+++ b/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c
-@@ -51,10 +51,11 @@
- #include "crypto_types.h"
- #include "err.h" /* for srtp_debug */
+diff -up firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c.D224588 firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c
+--- firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c.D224588	2025-06-17 18:15:28.000000000 +0200
++++ firefox-140.0/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c	2025-06-25 11:50:45.909171218 +0200
+@@ -53,6 +53,7 @@
  #include "alloc.h"
  #include "cipher_types.h"
  #include "cipher_test_cases.h"
@@ -46,14 +36,10 @@ diff --git a/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c b/third_party/l
  
  srtp_debug_module_t srtp_mod_aes_icm = {
      0,            /* debugging is off by default */
-     "aes icm nss" /* printable module name       */
- };
-@@ -252,12 +253,17 @@
-     if (!slot) {
-         return srtp_err_status_bad_param;
-     }
- 
-     SECItem keyItem = { siBuffer, (unsigned char *)key, c->key_size };
+@@ -257,8 +258,13 @@ static srtp_err_status_t srtp_aes_icm_ns
+     /* explicitly cast away const of key */
+     SECItem keyItem = { siBuffer, (unsigned char *)(uintptr_t)key,
+                         c->key_size };
 -    c->key = PK11_ImportSymKey(slot, CKM_AES_CTR, PK11_OriginUnwrap,
 -                               CKA_ENCRYPT, &keyItem, NULL);
 +    if (PK11_IsFIPS()) {
@@ -66,12 +52,9 @@ diff --git a/third_party/libsrtp/src/crypto/cipher/aes_icm_nss.c b/third_party/l
      PK11_FreeSlot(slot);
  
      if (!c->key) {
-         return srtp_err_status_cipher_fail;
-     }
-diff --git a/third_party/libsrtp/src/crypto/include/nss_fips.h b/third_party/libsrtp/src/crypto/include/nss_fips.h
-new file mode 100644
---- /dev/null
-+++ b/third_party/libsrtp/src/crypto/include/nss_fips.h
+diff -up firefox-140.0/third_party/libsrtp/src/crypto/include/nss_fips.h.D224588 firefox-140.0/third_party/libsrtp/src/crypto/include/nss_fips.h
+--- firefox-140.0/third_party/libsrtp/src/crypto/include/nss_fips.h.D224588	2025-06-25 11:50:45.909524312 +0200
++++ firefox-140.0/third_party/libsrtp/src/crypto/include/nss_fips.h	2025-06-25 11:50:45.909524312 +0200
 @@ -0,0 +1,148 @@
 +/*
 + * Copyright (c) 2024, Red Hat, Inc.
@@ -221,4 +204,3 @@ new file mode 100644
 + }
 +
 +#endif // NSS_FIPS_H
-
