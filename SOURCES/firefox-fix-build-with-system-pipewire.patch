@@ -1,0 +1,12 @@
+diff --git a/config/system-headers.mozbuild b/config/system-headers.mozbuild
+index 028002a1d0..9dcb50fe5e 100644
+--- a/config/system-headers.mozbuild
++++ b/config/system-headers.mozbuild
+@@ -310,6 +310,7 @@ system_headers = [
+     "getopt.h",
+     "gio/gdesktopappinfo.h",
+     "gio/gio.h",
++    "gio/gunixfdlist.h",
+     "glibconfig.h",
+     "glib.h",
+     "glib-object.h",

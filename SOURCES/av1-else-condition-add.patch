@@ -1,0 +1,14 @@
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+index acadd3a2cc..11b217174d 100644
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -12561,6 +12561,8 @@
+   type: RelaxedAtomicBool
+ #if defined(MOZ_AV1)
+   value: true
++#else
++  value: false
+ #endif
+   mirror: always
+ 
+

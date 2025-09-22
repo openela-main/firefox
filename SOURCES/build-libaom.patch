@@ -1,12 +1,13 @@
 diff -up firefox-128.0/config/external/moz.build.libaom firefox-128.0/config/external/moz.build
 --- firefox-128.0/config/external/moz.build.libaom	2024-07-31 15:32:39.460374047 +0200
 +++ firefox-128.0/config/external/moz.build	2024-07-31 15:34:41.646064796 +0200
-@@ -39,8 +39,8 @@ if CONFIG["MOZ_VORBIS"]:
+@@ -39,9 +39,9 @@ if CONFIG["MOZ_VORBIS"]:
+ 
  if not CONFIG["MOZ_SYSTEM_LIBVPX"]:
      external_dirs += ["media/libvpx"]
- 
 +external_dirs += ["media/libaom"]
- if CONFIG["MOZ_AV1"]:
+ 
+ if not CONFIG["MOZ_SYSTEM_AV1"]:
 -    external_dirs += ["media/libaom"]
      external_dirs += ["media/libdav1d"]
  
