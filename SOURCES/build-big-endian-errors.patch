@@ -1,0 +1,57 @@
+diff -up firefox-102.0/third_party/libwebrtc/common_audio/wav_file.cc.big-endian-errors firefox-102.0/third_party/libwebrtc/common_audio/wav_file.cc
+--- firefox-102.0/third_party/libwebrtc/common_audio/wav_file.cc.big-endian-errors	2022-08-17 13:19:53.056891028 +0200
++++ firefox-102.0/third_party/libwebrtc/common_audio/wav_file.cc	2022-08-17 13:19:57.251879556 +0200
+@@ -89,9 +89,6 @@ void WavReader::Reset() {
+ 
+ size_t WavReader::ReadSamples(const size_t num_samples,
+                               int16_t* const samples) {
+-#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
+-#error "Need to convert samples to big-endian when reading from WAV file"
+-#endif
+ 
+   size_t num_samples_left_to_read = num_samples;
+   size_t next_chunk_start = 0;
+@@ -129,9 +126,6 @@ size_t WavReader::ReadSamples(const size
+ }
+ 
+ size_t WavReader::ReadSamples(const size_t num_samples, float* const samples) {
+-#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
+-#error "Need to convert samples to big-endian when reading from WAV file"
+-#endif
+ 
+   size_t num_samples_left_to_read = num_samples;
+   size_t next_chunk_start = 0;
+@@ -213,9 +207,6 @@ WavWriter::WavWriter(FileWrapper file,
+ }
+ 
+ void WavWriter::WriteSamples(const int16_t* samples, size_t num_samples) {
+-#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
+-#error "Need to convert samples to little-endian when writing to WAV file"
+-#endif
+ 
+   for (size_t i = 0; i < num_samples; i += kMaxChunksize) {
+     const size_t num_remaining_samples = num_samples - i;
+@@ -243,9 +234,6 @@ void WavWriter::WriteSamples(const int16
+ }
+ 
+ void WavWriter::WriteSamples(const float* samples, size_t num_samples) {
+-#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
+-#error "Need to convert samples to little-endian when writing to WAV file"
+-#endif
+ 
+   for (size_t i = 0; i < num_samples; i += kMaxChunksize) {
+     const size_t num_remaining_samples = num_samples - i;
+diff -up firefox-102.0/third_party/libwebrtc/common_audio/wav_header.cc.big-endian-errors firefox-102.0/third_party/libwebrtc/common_audio/wav_header.cc
+--- firefox-102.0/third_party/libwebrtc/common_audio/wav_header.cc.big-endian-errors	2022-08-17 13:18:04.688187393 +0200
++++ firefox-102.0/third_party/libwebrtc/common_audio/wav_header.cc	2022-08-17 13:18:22.451138816 +0200
+@@ -26,10 +26,6 @@
+ namespace webrtc {
+ namespace {
+ 
+-#ifndef WEBRTC_ARCH_LITTLE_ENDIAN
+-#error "Code not working properly for big endian platforms."
+-#endif
+-
+ #pragma pack(2)
+ struct ChunkHeader {
+   uint32_t ID;

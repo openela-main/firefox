@@ -1,0 +1,24 @@
+diff -up firefox-140.1.0/media/ffvpx/libavcodec/av1dec.c.build-ffvpx firefox-140.1.0/media/ffvpx/libavcodec/av1dec.c
+--- firefox-140.1.0/media/ffvpx/libavcodec/av1dec.c.build-ffvpx	2025-07-14 19:14:53.000000000 +0200
++++ firefox-140.1.0/media/ffvpx/libavcodec/av1dec.c	2025-07-31 13:02:48.131126439 +0200
+@@ -904,7 +904,7 @@ static av_cold int av1_decode_init(AVCod
+         ff_cbs_fragment_reset(&s->current_obu);
+     }
+ 
+-    s->dovi.logctx = avctx;
++    s->dovi.logctx = (AVContext *) avctx;
+     s->dovi.cfg.dv_profile = 10; // default for AV1
+     sd = ff_get_coded_side_data(avctx, AV_PKT_DATA_DOVI_CONF);
+     if (sd && sd->size >= sizeof(s->dovi.cfg))
+diff -up firefox-140.1.0/media/ffvpx/libavcodec/libdav1d.c.build-ffvpx firefox-140.1.0/media/ffvpx/libavcodec/libdav1d.c
+--- firefox-140.1.0/media/ffvpx/libavcodec/libdav1d.c.build-ffvpx	2025-07-14 19:14:54.000000000 +0200
++++ firefox-140.1.0/media/ffvpx/libavcodec/libdav1d.c	2025-07-31 13:03:08.395175190 +0200
+@@ -293,7 +293,7 @@ static av_cold int libdav1d_init(AVCodec
+     c->delay = res > 1 ? res : 0;
+ #endif
+ 
+-    dav1d->dovi.logctx = c;
++    dav1d->dovi.logctx = (AVContext *) c;
+     dav1d->dovi.cfg.dv_profile = 10; // default for AV1
+     sd = ff_get_coded_side_data(c, AV_PKT_DATA_DOVI_CONF);
+     if (sd && sd->size >= sizeof(dav1d->dovi.cfg))

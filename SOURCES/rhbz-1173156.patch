@@ -1,0 +1,12 @@
+diff -up firefox-140.0/extensions/auth/nsAuthSambaNTLM.cpp.rhbz-1173156 firefox-140.0/extensions/auth/nsAuthSambaNTLM.cpp
+--- firefox-140.0/extensions/auth/nsAuthSambaNTLM.cpp.rhbz-1173156	2025-06-02 15:26:45.000000000 +0200
++++ firefox-140.0/extensions/auth/nsAuthSambaNTLM.cpp	2025-06-12 11:02:37.183715940 +0200
+@@ -153,7 +153,7 @@ nsresult nsAuthSambaNTLM::SpawnNTLMAuthH
+     options.fds_to_remap.push_back(
+         std::pair{fromChildPipeWrite.get(), STDOUT_FILENO});
+ 
+-    std::vector<std::string> argvVec{"ntlm_auth",        "--helper-protocol",
++    std::vector<std::string> argvVec{"/usr/bin/ntlm_auth",        "--helper-protocol",
+                                      "ntlmssp-client-1", "--use-cached-creds",
+                                      "--username",       username};
+ 

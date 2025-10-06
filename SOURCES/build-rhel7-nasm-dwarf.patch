@@ -1,0 +1,12 @@
+diff -up firefox-140.0/python/mozbuild/mozbuild/frontend/context.py.build-rhel7-nasm-dwarf firefox-140.0/python/mozbuild/mozbuild/frontend/context.py
+--- firefox-140.0/python/mozbuild/mozbuild/frontend/context.py.build-rhel7-nasm-dwarf	2025-06-02 15:26:51.000000000 +0200
++++ firefox-140.0/python/mozbuild/mozbuild/frontend/context.py	2025-06-12 12:09:56.398728745 +0200
+@@ -417,7 +417,7 @@ class AsmFlags(BaseCompileFlags):
+                 if self._context.config.substs.get("OS_ARCH") == "WINNT":
+                     debug_flags += ["-F", "cv8"]
+                 elif self._context.config.substs.get("OS_ARCH") != "Darwin":
+-                    debug_flags += ["-F", "dwarf"]
++                    debug_flags += ["-F", "elf32"]
+             elif self._context.config.substs.get("CC_TYPE") == "clang-cl":
+                 if self._context.config.substs.get("TARGET_CPU") == "aarch64":
+                     # armasm64 accepts a paucity of options compared to ml/ml64.

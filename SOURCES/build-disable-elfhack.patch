@@ -1,0 +1,12 @@
+diff -up firefox-128.0/toolkit/moz.configure.disable-elfhack firefox-128.0/toolkit/moz.configure
+--- firefox-128.0/toolkit/moz.configure.disable-elfhack	2024-06-19 17:24:29.964976617 +0200
++++ firefox-128.0/toolkit/moz.configure	2024-06-19 17:24:53.015843805 +0200
+@@ -1553,7 +1553,7 @@ with only_when("--enable-compile-environ
+     @depends(host, target)
+     def has_elfhack(host, target):
+         return (
+-            target.kernel == "Linux"
++            False and target.kernel == "Linux"
+             and host.kernel == "Linux"
+             and target.cpu in ("arm", "aarch64", "x86", "x86_64")
+         )
