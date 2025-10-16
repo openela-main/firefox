@@ -1,0 +1,31 @@
+diff --git a/security/nss/lib/mozpkix/lib/pkixnss.cpp b/security/nss/lib/mozpkix/lib/pkixnss.cpp
+index 31aa1ddd67..6eb367eae4 100644
+--- a/security/nss/lib/mozpkix/lib/pkixnss.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixnss.cpp
+@@ -323,13 +323,21 @@ VerifyMLDSASignedDataNSS(Input data,
+   SECItem dataItem(UnsafeMapInputToSECItem(data));
+   CK_MECHANISM_TYPE mechanism;
+ 
+-  switch (pubk->u.mldsa.paramSet) {
+-    case SEC_OID_ML_DSA_44:
+-    case SEC_OID_ML_DSA_65:
+-    case SEC_OID_ML_DSA_87:
++  switch (SEC_GetSignatureAlgorithmOidTag(pubk->keyType, pubk->u.mldsa.params)) {
++    case CKP_ML_DSA_44:
++      hashPolicyTag = SEC_OID_UNKNOWN;
++      mechanism = CKM_ML_DSA;
++      signaturePolicyTag = SEC_OID_PRIVATE_3;
++      break;
++    case CKP_ML_DSA_65:
++      hashPolicyTag = SEC_OID_UNKNOWN;
+       mechanism = CKM_ML_DSA;
+-      signaturePolicyTag = pubk->u.mldsa.paramSet;
++      signaturePolicyTag = SEC_OID_PRIVATE_4;
++      break;
++    case CKP_ML_DSA_87:
+       hashPolicyTag = SEC_OID_UNKNOWN;
++      mechanism = CKM_ML_DSA;
++      signaturePolicyTag = SEC_OID_PRIVATE_5;
+       break;
+     default:
+       return Result::ERROR_UNSUPPORTED_KEYALG;

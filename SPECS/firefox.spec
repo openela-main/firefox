@@ -175,8 +175,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.3.0
-Release:              1%{?dist}
+Version:              140.4.0
+Release:              3%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -206,7 +206,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20250909.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20251010.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -260,6 +260,8 @@ Patch51:              mozilla-bmo1170092.patch
 Patch52:              exceptionHandled-for-IO-error-processhandler.patch
 Patch53:              D245908.clear-lang-bundles.diff
 Patch54:              D249071.restoreWinState.diff
+# Removed Crash Annotation GraphicsCriticalError 
+Patch55:              D266159.1760530435.diff
 
 # -- Submitted upstream, not merged --
 Patch101:             mozilla-bmo1636168-fscreen.patch
@@ -277,6 +279,18 @@ Patch108:             mozilla-bmo1716707-svg.patch
 Patch109:             mozilla-bmo1789216-disable-av1.patch
 Patch110:             build-libaom.patch
 Patch111:             av1-else-condition-add.patch
+
+# ML-DSA support
+# https://phabricator.services.mozilla.com/D262395
+Patch120:             firefox-integrate-ml-dsa-signature-verification-for-pkix-certificate-chain-validation.patch
+# https://phabricator.services.mozilla.com/D262397
+Patch121:             firefox-add-ml-dsa-certificate-support-to-certviewer.patch
+# https://phabricator.services.mozilla.com/D264144
+Patch122:             firefox-enable-ml-dsa-signature-verification-for-certificate-chain-validation.patch
+# RHEL downstream only - adapts to ML-DSA support in NSS from RHEL 10
+Patch123:             firefox-adapt-ml-dsa-support-to-rhel-nss.patch
+# RHEL downstream only - enable ML-DSA in manager/ssl
+Patch124:             firefox-enable-ml-dsa-in-manager-ssl.patch
 
 # ---- Fedora specific patches ----
 Patch151:             firefox-enable-addons.patch
@@ -1307,6 +1321,7 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P52 -p1 -b .exceptionHandled-for-IO-error-processhandler
 %patch -P53 -p1 -b .clear-lang-bundles
 %patch -P54 -p1 -b .restoreWinState
+%patch -P55 -p1 -b .D266159.1760530435
 
 # -- Submitted upstream, not merged --
 %patch -P101 -p1 -b .mozilla-bmo1636168-fscreen
@@ -1323,6 +1338,15 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %endif
 %patch -P110 -p1 -b .libaom
 %patch -P111 -p1 -b .av1-else-condition-add
+
+%if 0%{?rhel} >= 10 && %{rhel_minor_version} >= 1
+# ML-DSA support
+%patch -P120 -p1 -b .integrate-ml-dsa-signature-verification-for-pkix-certificate-chain-validation
+%patch -P121 -p1 -b .add-ml-dsa-certificate-support-to-certviewer
+%patch -P122 -p1 -b .enable-ml-dsa-signature-verification-for-certificate-chain-validation
+%patch -P123 -p1 -b .adapt-ml-dsa-support-to-rhel-nss
+%patch -P124 -p1 -b .enable-ml-dsa-in-manager-ssl
+%endif
 
 # ---- Fedora specific patches ----
 %patch -P151 -p1 -b .addons
@@ -1382,9 +1406,13 @@ echo "ac_add_options --enable-debug" >> .mozconfig
 echo "ac_add_options --disable-optimize" >> .mozconfig
 %else
 %global optimize_flags "none"
-%ifarch s390x
-%global optimize_flags "-g -O1"
+
+%if 0%{?rhel} < 10
+  %ifarch s390x
+   %global optimize_flags "-g -O1"
+  %endif
 %endif
+
 %ifarch ppc64le aarch64
 %global optimize_flags "-g -O2"
 %endif
@@ -1419,9 +1447,10 @@ echo "ac_add_options --disable-jit" >> .mozconfig
 
 %ifarch ppc64 ppc64le
 echo "ac_add_options --disable-webrtc" >> .mozconfig
+%endif
+%if 0%{?rhel} < 10
 echo "ac_add_options --disable-lto" >> .mozconfig
 %endif
-echo "ac_add_options --disable-lto" >> .mozconfig
 
 # AV1 requires newer nasm that was rebased in 8.4
 %if 0%{?rhel} == 7 || (0%{?rhel} == 8 && %{rhel_minor_version} < 4)
@@ -1668,6 +1697,7 @@ echo "export CXX=g++" >> .mozconfig
 echo "export AR=\"gcc-ar\"" >> .mozconfig
 echo "export NM=\"gcc-nm\"" >> .mozconfig
 echo "export RANLIB=\"gcc-ranlib\"" >> .mozconfig
+echo "export MALLOC_MMAP_MAX_=0" >> .mozconfig
 
 MOZ_SMP_FLAGS=-j1
 # On x86_64 architectures, Mozilla can build up to 4 jobs at once in parallel,
@@ -2079,9 +2109,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Wed Sep 17 2025 Release Engineering <releng@openela.org> - 140.3.0
+* Thu Oct 16 2025 Release Engineering <releng@openela.org> - 140.4.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Fri Oct 10 2025 Jan Horak <jhorak@redhat.com> - 140.4.0-3
+- Update to 140.4.0 ESR
 
 * Wed Sep 10 2025 Jan Horak <jhorak@redhat.com> - 140.3.0-1
 - Update to 140.3.0
