@@ -1,0 +1,239 @@
+diff --git a/security/nss/lib/mozpkix/include/pkix/pkixder.h b/security/nss/lib/mozpkix/include/pkix/pkixder.h
+index ac1ec24393..40eb5027af 100644
+--- a/security/nss/lib/mozpkix/include/pkix/pkixder.h
++++ b/security/nss/lib/mozpkix/include/pkix/pkixder.h
+@@ -488,7 +488,7 @@ inline Result OptionalExtensions(Reader& input, uint8_t tag,
+ Result DigestAlgorithmIdentifier(Reader& input,
+                                  /*out*/ DigestAlgorithm& algorithm);
+ 
+-enum class PublicKeyAlgorithm { RSA_PKCS1, RSA_PSS, ECDSA };
++enum class PublicKeyAlgorithm { RSA_PKCS1, RSA_PSS, ECDSA, MLDSA };
+ 
+ Result SignatureAlgorithmIdentifierValue(
+     Reader& input,
+diff --git a/security/nss/lib/mozpkix/include/pkix/pkixnss.h b/security/nss/lib/mozpkix/include/pkix/pkixnss.h
+index 6711959e71..b87e88a599 100644
+--- a/security/nss/lib/mozpkix/include/pkix/pkixnss.h
++++ b/security/nss/lib/mozpkix/include/pkix/pkixnss.h
+@@ -50,6 +50,13 @@ Result VerifyECDSASignedDataNSS(Input data, DigestAlgorithm digestAlgorithm,
+                                 Input signature, Input subjectPublicKeyInfo,
+                                 void* pkcs11PinArg);
+ 
++// Verifies the ML-DSA signature on the given data using the given ML-DSA
++// public key
++Result VerifyMLDSASignedDataNSS(Input data,
++                                Input signature,
++                                Input subjectPublicKeyInfo,
++                                void* pkcs11PinArg);
++
+ // Computes the digest of the given data using the given digest algorithm.
+ //
+ // item contains the data to hash.
+diff --git a/security/nss/lib/mozpkix/include/pkix/pkixtypes.h b/security/nss/lib/mozpkix/include/pkix/pkixtypes.h
+index 6a07d6e885..f24bd546e4 100644
+--- a/security/nss/lib/mozpkix/include/pkix/pkixtypes.h
++++ b/security/nss/lib/mozpkix/include/pkix/pkixtypes.h
+@@ -334,6 +334,10 @@ class TrustDomain {
+                                        Input signature,
+                                        Input subjectPublicKeyInfo) = 0;
+ 
++  virtual Result VerifyMLDSASignedData(Input data,
++                                       Input signature,
++                                       Input subjectPublicKeyInfo) = 0;
++
+   // Check that the validity duration is acceptable.
+   //
+   // Return Success if the validity duration is acceptable,
+diff --git a/security/nss/lib/mozpkix/lib/pkixc.cpp b/security/nss/lib/mozpkix/lib/pkixc.cpp
+index 5dea13c43e..f797a3b3a1 100644
+--- a/security/nss/lib/mozpkix/lib/pkixc.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixc.cpp
+@@ -143,6 +143,15 @@ class CodeSigningTrustDomain final : public TrustDomain {
+         subjectPublicKeyInfo, nullptr);
+   }
+ 
++  virtual Result VerifyMLDSASignedData(Input data,
++                                       Input signature,
++                                       Input subjectPublicKeyInfo) override {
++    return VerifyMLDSASignedDataNSS(data,
++                                    signature,
++                                    subjectPublicKeyInfo,
++                                    nullptr);
++  }
++
+   virtual Result CheckValidityIsAcceptable(Time notBefore, Time notAfter,
+                                            EndEntityOrCA endEntityOrCA,
+                                            KeyPurposeId keyPurpose) override {
+diff --git a/security/nss/lib/mozpkix/lib/pkixcheck.cpp b/security/nss/lib/mozpkix/lib/pkixcheck.cpp
+index 8b7e1bf73e..4ce73f3944 100644
+--- a/security/nss/lib/mozpkix/lib/pkixcheck.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixcheck.cpp
+@@ -118,6 +118,9 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
+       // for any curve that we support, the chances of us encountering a curve
+       // during path building is too low to be worth bothering with.
+       break;
++
++    case der::PublicKeyAlgorithm::MLDSA:
++      break;
+     MOZILLA_PKIX_UNREACHABLE_DEFAULT_ENUM
+   }
+ 
+@@ -248,6 +251,24 @@ CheckSubjectPublicKeyInfoContents(Reader& input, TrustDomain& trustDomain,
+     0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01
+   };
+ 
++  // Params for pure ML-DSA-44 signature
++  // python DottedOIDToCode.py id-ml-dsa-44 2.16.840.1.101.3.4.3.17
++  static const uint8_t id_ml_dsa_44[] = {
++      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x11
++  };
++
++  // Params for pure ML-DSA-65 signature
++  // python DottedOIDToCode.py id-ml-dsa-65 2.16.840.1.101.3.4.3.18
++  static const uint8_t id_ml_dsa_65[] = {
++      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x12
++  };
++
++  // Params for pure ML-DSA-87 signature
++  // python DottedOIDToCode.py id-ml-dsa-87 2.16.840.1.101.3.4.3.19
++  static const uint8_t id_ml_dsa_87[] = {
++      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x13
++  };
++
+   if (algorithmOID.MatchRest(id_ecPublicKey)) {
+     // An id-ecPublicKey AlgorithmIdentifier has a parameter that identifes
+     // the curve being used. Although RFC 5480 specifies multiple forms, we
+@@ -361,6 +382,30 @@ CheckSubjectPublicKeyInfoContents(Reader& input, TrustDomain& trustDomain,
+     if (rv != Success) {
+       return rv;
+     }
++  } else if (algorithmOID.MatchRest(id_ml_dsa_44) ||
++             algorithmOID.MatchRest(id_ml_dsa_65) ||
++             algorithmOID.MatchRest(id_ml_dsa_87)) {
++
++    /*
++     * The ML-DSA AlgorithmIdentifier is expected to contain only the OID,
++     * with no parameters field present. According to the Internet-Draft
++     * https://www.ietf.org/archive/id/draft-ietf-lamps-dilithium-certificates-11.html
++     * (Section 3), the AlgorithmIdentifier for ML-DSA variants must omit the `parameters`
++     * field entirely.
++     * In DER encoding, the absence of the parameters field means that after parsing the
++     * OID, no additional bytes should remain. Calling `der::End(algorithm)` confirms that
++     * this constraint is satisfied and that the structure is correctly encoded.
++     */
++    rv = der::End(algorithm);
++    if (rv != Success) {
++      return rv;
++    }
++
++    Input rawPublicKey;
++    rv = subjectPublicKeyReader.SkipToEnd(rawPublicKey);
++    if (rv != Success) {
++      return rv;
++    }
+   } else {
+     return Result::ERROR_UNSUPPORTED_KEYALG;
+   }
+diff --git a/security/nss/lib/mozpkix/lib/pkixder.cpp b/security/nss/lib/mozpkix/lib/pkixder.cpp
+index 59454c7d3c..4ff45ed566 100644
+--- a/security/nss/lib/mozpkix/lib/pkixder.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixder.cpp
+@@ -211,6 +211,24 @@ SignatureAlgorithmIdentifierValue(Reader& input,
+     0x00, 0xa2, 0x03, 0x02, 0x01, 0x40
+   };
+ 
++  // Params for pure ML-DSA-44 signature
++  // python DottedOIDToCode.py id-ml-dsa-44 2.16.840.1.101.3.4.3.17
++  static const uint8_t id_ml_dsa_44[] = {
++      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x11
++  };
++
++  // Params for pure ML-DSA-65 signature
++  // python DottedOIDToCode.py id-ml-dsa-65 2.16.840.1.101.3.4.3.18
++  static const uint8_t id_ml_dsa_65[] = {
++      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x12
++  };
++
++  // Params for pure ML-DSA-87 signature
++  // python DottedOIDToCode.py id-ml-dsa-87 2.16.840.1.101.3.4.3.19
++  static const uint8_t id_ml_dsa_87[] = {
++      0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x13
++  };
++
+   // Matching is attempted based on a rough estimate of the commonality of the
+   // algorithm, to minimize the number of MatchRest calls.
+   if (algorithmID.MatchRest(sha256WithRSAEncryption)) {
+@@ -252,6 +270,10 @@ SignatureAlgorithmIdentifierValue(Reader& input,
+     } else {
+       return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+     }
++  } else if (algorithmID.MatchRest(id_ml_dsa_44) ||
++             algorithmID.MatchRest(id_ml_dsa_65) ||
++             algorithmID.MatchRest(id_ml_dsa_87)) {
++    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA;
+   } else {
+     return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+   }
+diff --git a/security/nss/lib/mozpkix/lib/pkixnss.cpp b/security/nss/lib/mozpkix/lib/pkixnss.cpp
+index 606ef708d8..31aa1ddd67 100644
+--- a/security/nss/lib/mozpkix/lib/pkixnss.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixnss.cpp
+@@ -303,6 +303,44 @@ DigestBufNSS(Input item,
+   return Success;
+ }
+ 
++Result
++VerifyMLDSASignedDataNSS(Input data,
++                         Input signature,
++                         Input subjectPublicKeyInfo,
++                         void* pkcs11PinArg)
++{
++  ScopedSECKEYPublicKey publicKey;
++  SECKEYPublicKey *pubk = NULL;
++  SECOidTag signaturePolicyTag, hashPolicyTag;
++  Result rv = SubjectPublicKeyInfoToSECKEYPublicKey(subjectPublicKeyInfo,
++                                                    publicKey);
++  if (rv != Success) {
++    return rv;
++  }
++
++  pubk = publicKey.get();
++  SECItem signatureItem(UnsafeMapInputToSECItem(signature));
++  SECItem dataItem(UnsafeMapInputToSECItem(data));
++  CK_MECHANISM_TYPE mechanism;
++
++  switch (pubk->u.mldsa.paramSet) {
++    case SEC_OID_ML_DSA_44:
++    case SEC_OID_ML_DSA_65:
++    case SEC_OID_ML_DSA_87:
++      mechanism = CKM_ML_DSA;
++      signaturePolicyTag = pubk->u.mldsa.paramSet;
++      hashPolicyTag = SEC_OID_UNKNOWN;
++      break;
++    default:
++      return Result::ERROR_UNSUPPORTED_KEYALG;
++      break;
++  }
++
++  SECOidTag policyTags[2] = {signaturePolicyTag, hashPolicyTag};
++  return VerifySignedData(pubk, mechanism, nullptr, &signatureItem,
++                          &dataItem, policyTags, pkcs11PinArg);
++}
++
+ Result
+ MapPRErrorCodeToResult(PRErrorCode error)
+ {
+diff --git a/security/nss/lib/mozpkix/lib/pkixverify.cpp b/security/nss/lib/mozpkix/lib/pkixverify.cpp
+index 8cb58bf7de..ff132d89df 100644
+--- a/security/nss/lib/mozpkix/lib/pkixverify.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixverify.cpp
+@@ -53,6 +53,9 @@ VerifySignedData(TrustDomain& trustDomain,
+     case der::PublicKeyAlgorithm::RSA_PSS:
+       return trustDomain.VerifyRSAPSSSignedData(signedData.data,
+           digestAlgorithm, signedData.signature, signerSubjectPublicKeyInfo);
++    case der::PublicKeyAlgorithm::MLDSA:
++      return trustDomain.VerifyMLDSASignedData(signedData.data,
++          signedData.signature, signerSubjectPublicKeyInfo);
+     MOZILLA_PKIX_UNREACHABLE_DEFAULT_ENUM
+   }
+ }

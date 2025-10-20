@@ -1,0 +1,48 @@
+diff --git a/security/manager/ssl/nsNSSCallbacks.cpp b/security/manager/ssl/nsNSSCallbacks.cpp
+index 2dc48c9f4c..0a7b84d787 100644
+--- a/security/manager/ssl/nsNSSCallbacks.cpp
++++ b/security/manager/ssl/nsNSSCallbacks.cpp
+@@ -722,6 +722,15 @@ nsCString getSignatureName(uint32_t aSignatureScheme) {
+     case ssl_sig_rsa_pkcs1_sha1md5:
+       signatureName = "RSA-PKCS1-SHA1MD5"_ns;
+       break;
++    case ssl_sig_mldsa44:
++      signatureName = "ML-DSA-44"_ns;
++      break;
++    case ssl_sig_mldsa65:
++      signatureName = "ML-DSA-65"_ns;
++      break;
++    case ssl_sig_mldsa87:
++      signatureName = "ML-DSA-87"_ns;
++      break;
+     // All other groups are not enabled in Firefox. See sEnabledSignatureSchemes
+     // in nsNSSIOLayer.cpp.
+     default:
+@@ -1061,6 +1070,13 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
+           glean::ssl::auth_ecdsa_curve_full.AccumulateSingleSample(
+               ECCCurve(channelInfo.authKeyBits));
+           break;
++      case ssl_auth_mldsa44:
++      case ssl_auth_mldsa65:
++      case ssl_auth_mldsa87:
++          /* TODO: add auth_mldsa_key_size_full in ssl/metrics.yaml
++          glean::ssl::auth_mldsa_key_size_full.AccumulateSingleSample(
++              NonECCKeySize(channelInfo.authKeyBits)); */
++          break;
+         default:
+           MOZ_CRASH("impossible auth algorithm");
+           break;
+diff --git a/security/manager/ssl/nsNSSIOLayer.cpp b/security/manager/ssl/nsNSSIOLayer.cpp
+index b1a5f5c2df..7443011b13 100644
+--- a/security/manager/ssl/nsNSSIOLayer.cpp
++++ b/security/manager/ssl/nsNSSIOLayer.cpp
+@@ -1300,6 +1300,9 @@ static PRFileDesc* nsSSLIOLayerImportFD(PRFileDesc* fd,
+ // Please change getSignatureName in nsNSSCallbacks.cpp when changing the list
+ // here. See NOTE at SSL_SignatureSchemePrefSet call site.
+ static const SSLSignatureScheme sEnabledSignatureSchemes[] = {
++    ssl_sig_mldsa87,
++    ssl_sig_mldsa65,
++    ssl_sig_mldsa44,
+     ssl_sig_ecdsa_secp256r1_sha256,
+     ssl_sig_ecdsa_secp384r1_sha384,
+     ssl_sig_ecdsa_secp521r1_sha512,

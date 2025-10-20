@@ -1,0 +1,19 @@
+diff --git a/gfx/webrender_bindings/RenderCompositorSWGL.cpp b/gfx/webrender_bindings/RenderCompositorSWGL.cpp
+--- a/gfx/webrender_bindings/RenderCompositorSWGL.cpp
++++ b/gfx/webrender_bindings/RenderCompositorSWGL.cpp
+@@ -76,12 +76,14 @@
+     const wr::DeviceIntRect* aOpaqueRects, size_t aNumOpaqueRects) {
+   // Request a new draw target to use from the widget...
+   MOZ_ASSERT(!mDT);
+   mDT = mWidget->StartRemoteDrawingInRegion(mDirtyRegion);
+   if (!mDT) {
++#if !defined(MOZ_WAYLAND)
+     gfxCriticalNoteOnce
+         << "RenderCompositorSWGL failed mapping default framebuffer, no dt";
++#endif
+     return false;
+   }
+   // Attempt to lock the underlying buffer directly from the draw target.
+   // Verify that the size at least matches what the widget claims and that
+   // the format is BGRA8 as SWGL requires.
+
