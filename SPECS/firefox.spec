@@ -12,6 +12,22 @@
 %global run_firefox_tests 0
 %endif
 
+%ifarch x86_64
+%if 0%{?rhel} == 7
+# Disable debuginfo package and strip all binaries to avoid 4GB cpio limit
+%define _binary_payload w19T16.xzdio
+%global debug_package %{nil}
+%define _enable_debug_packages 0
+%define __spec_install_post \
+    %{__arch_install_post} \
+    %{__os_install_post} \
+    find %{buildroot}%{mozappdir} -type f -name "*.so" -exec eu-strip --strip-debug {} \\; 2>/dev/null || find %{buildroot}%{mozappdir} -type f -name "*.so" -exec strip --strip-debug {} \\; \
+    eu-strip --strip-all %{buildroot}%{mozappdir}/firefox-bin 2>/dev/null || strip --strip-all %{buildroot}%{mozappdir}/firefox-bin || : \
+    eu-strip --strip-all %{buildroot}%{mozappdir}/firefox 2>/dev/null || strip --strip-all %{buildroot}%{mozappdir}/firefox || : \
+    eu-strip --strip-all %{buildroot}%{mozappdir}/plugin-container 2>/dev/null || strip --strip-all %{buildroot}%{mozappdir}/plugin-container || :
+%endif
+%endif
+
 # wasi_sdk is for sandboxing third party c/c++ libs by using rlbox, exclude s390x on the f39.
 
 %global with_wasi_sdk 0
@@ -175,8 +191,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.4.0
-Release:              3%{?dist}
+Version:              140.5.0
+Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -206,7 +222,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20251010.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20251107.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -291,6 +307,8 @@ Patch122:             firefox-enable-ml-dsa-signature-verification-for-certifica
 Patch123:             firefox-adapt-ml-dsa-support-to-rhel-nss.patch
 # RHEL downstream only - enable ML-DSA in manager/ssl
 Patch124:             firefox-enable-ml-dsa-in-manager-ssl.patch
+# RHEL downstream only - add mlkem768-secp256r1 support
+Patch125:             firefox-add-mlkem768-secp256r1-support.patch
 
 # ---- Fedora specific patches ----
 Patch151:             firefox-enable-addons.patch
@@ -1346,6 +1364,7 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P122 -p1 -b .enable-ml-dsa-signature-verification-for-certificate-chain-validation
 %patch -P123 -p1 -b .adapt-ml-dsa-support-to-rhel-nss
 %patch -P124 -p1 -b .enable-ml-dsa-in-manager-ssl
+%patch -P125 -p1 -b .add-mlkem768-secp256r1-support
 %endif
 
 # ---- Fedora specific patches ----
@@ -1667,7 +1686,7 @@ MOZ_LINK_FLAGS="-Wl,--no-keep-memory -Wl,--reduce-memory-overheads"
 # __global_ldflags that normally sets this.
 MOZ_LINK_FLAGS="$MOZ_LINK_FLAGS -L%{_libdir}"
 %endif
-%ifarch %{ix86} %{s390x}
+%ifarch %{ix86} s390x
 export RUSTFLAGS="-Cdebuginfo=0"
 echo 'export RUSTFLAGS="-Cdebuginfo=0"' >> .mozconfig
 %endif
@@ -2109,9 +2128,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Oct 16 2025 Release Engineering <releng@openela.org> - 140.4.0
+* Thu Nov 13 2025 Release Engineering <releng@openela.org> - 140.5.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Fri Nov  7 2025 Jan Horak <jhorak@redhat.com> - 140.5.0-1
+- Update to 140.5.0 ESR
 
 * Fri Oct 10 2025 Jan Horak <jhorak@redhat.com> - 140.4.0-3
 - Update to 140.4.0 ESR

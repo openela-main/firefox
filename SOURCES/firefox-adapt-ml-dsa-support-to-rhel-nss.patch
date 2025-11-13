@@ -1,8 +1,37 @@
 diff --git a/security/nss/lib/mozpkix/lib/pkixnss.cpp b/security/nss/lib/mozpkix/lib/pkixnss.cpp
-index 31aa1ddd67..6eb367eae4 100644
+index 31aa1ddd67..93ab402bfd 100644
 --- a/security/nss/lib/mozpkix/lib/pkixnss.cpp
 +++ b/security/nss/lib/mozpkix/lib/pkixnss.cpp
-@@ -323,13 +323,21 @@ VerifyMLDSASignedDataNSS(Input data,
+@@ -303,6 +303,28 @@ DigestBufNSS(Input item,
+   return Success;
+ }
+ 
++static SECOidTag
++findOIDByName(const char *cipherString)
++{
++  SECOidTag tag;
++  SECOidData *oid;
++
++  for (int i = 1; ; i++) {
++    SECOidTag tag = static_cast<SECOidTag>(i);
++    oid = SECOID_FindOIDByTag(tag);
++
++    if (oid == NULL) {
++      break;
++    }
++
++    if (strcasecmp(oid->desc, cipherString) == 0) {
++      return tag;
++    }
++  }
++
++  return SEC_OID_UNKNOWN;
++}
++
+ Result
+ VerifyMLDSASignedDataNSS(Input data,
+                          Input signature,
+@@ -323,17 +345,14 @@ VerifyMLDSASignedDataNSS(Input data,
    SECItem dataItem(UnsafeMapInputToSECItem(data));
    CK_MECHANISM_TYPE mechanism;
  
@@ -10,22 +39,21 @@ index 31aa1ddd67..6eb367eae4 100644
 -    case SEC_OID_ML_DSA_44:
 -    case SEC_OID_ML_DSA_65:
 -    case SEC_OID_ML_DSA_87:
-+  switch (SEC_GetSignatureAlgorithmOidTag(pubk->keyType, pubk->u.mldsa.params)) {
-+    case CKP_ML_DSA_44:
-+      hashPolicyTag = SEC_OID_UNKNOWN;
-+      mechanism = CKM_ML_DSA;
-+      signaturePolicyTag = SEC_OID_PRIVATE_3;
-+      break;
-+    case CKP_ML_DSA_65:
-+      hashPolicyTag = SEC_OID_UNKNOWN;
-       mechanism = CKM_ML_DSA;
+-      mechanism = CKM_ML_DSA;
 -      signaturePolicyTag = pubk->u.mldsa.paramSet;
-+      signaturePolicyTag = SEC_OID_PRIVATE_4;
-+      break;
-+    case CKP_ML_DSA_87:
-       hashPolicyTag = SEC_OID_UNKNOWN;
-+      mechanism = CKM_ML_DSA;
-+      signaturePolicyTag = SEC_OID_PRIVATE_5;
-       break;
-     default:
-       return Result::ERROR_UNSUPPORTED_KEYALG;
+-      hashPolicyTag = SEC_OID_UNKNOWN;
+-      break;
+-    default:
+-      return Result::ERROR_UNSUPPORTED_KEYALG;
+-      break;
++  if (pubk->u.mldsa.params == findOIDByName("ML-DSA-44") ||
++      pubk->u.mldsa.params == findOIDByName("ML-DSA-65") ||
++      pubk->u.mldsa.params == findOIDByName("ML-DSA-87")) {
++    hashPolicyTag = SEC_OID_UNKNOWN;
++    mechanism = CKM_ML_DSA;
++    signaturePolicyTag = pubk->u.mldsa.params;
++  } else {
++    return Result::ERROR_UNSUPPORTED_KEYALG;
+   }
+ 
+   SECOidTag policyTags[2] = {signaturePolicyTag, hashPolicyTag};
