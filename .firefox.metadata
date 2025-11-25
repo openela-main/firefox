@@ -1,6 +1,6 @@
 8806480040fbced682dc1d2f952d9888c1ec143ef5662e7608d7103ece92e1c1 SOURCES/cbindgen-vendor.tar.xz
-f3ce95816869362d43b8be8bd4ca1d30218c11924b8b418478f3e05da130c053 SOURCES/firefox-140.4.0esr.processed-source.tar.xz
-fc7c85df89bd5dac74a83610ba03c50e7576a478fb90f9491b92da64661f5439 SOURCES/firefox-langpacks-140.4.0esr-20251010.tar.xz
+de0eaf2b594955febb9d2258ecb27607f1f84c98432916cf82954bcff528a552 SOURCES/firefox-140.5.0esr.processed-source.tar.xz
+bb72f1cdcc81c538fc6255043455bee131f1e11d3446b0af5a2ec5766d55598e SOURCES/firefox-langpacks-140.5.0esr-20251107.tar.xz
 f4abd35df3b5966a435610e010dbc637e5fc36c407c2563f80b5c08be3138adc SOURCES/mochitest-python.tar.gz
 6455bb9eaa7fafbd086c822dc1cbf42b065b836d43ab7e397f04b3368d0a6efc SOURCES/nss-3.112.0-1.el9_4.src.rpm
 ec1b229a24e3195055d2cadcb5b55eb04a246156f57c3b8e82792e3f4f38b152 SOURCES/nss-3.112.0-4.el8_2.src.rpm
