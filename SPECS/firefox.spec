@@ -191,8 +191,8 @@ end}
 
 Summary:        Mozilla Firefox Web browser
 Name:           firefox
-Version:        140.5.0
-Release:        2%{?dist}
+Version:        140.6.0
+Release:        1%{?dist}
 URL:            https://www.mozilla.org/firefox/
 License:        MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -222,7 +222,7 @@ ExcludeArch:    aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:        firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:        firefox-langpacks-%{version}%{?pre_version}-20251107.tar.xz
+Source1:        firefox-langpacks-%{version}%{?pre_version}-20251202.tar.xz
 %endif
 Source2:        cbindgen-vendor.tar.xz
 Source3:        process-official-tarball
@@ -1756,8 +1756,11 @@ cp %{SOURCE36} .
   export PATH=%{_buildrootdir}/%{bundled_install_path}/bin:$PATH
   echo $PKG_CONFIG_PATH
 %endif
-
-./mach build -v 2>&1 || exit 1
+%ifarch s390x
+  setarch -R ./mach build -v 2>&1 || exit 1
+%else
+  ./mach build -v 2>&1 || exit 1
+%endif
 
 #---------------------------------------------------------------------
 %install
@@ -2128,6 +2131,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
+* Tue Dec  2 2025 Jan Horak <jhorak@redhat.com> - 140.6.0-1
+- Update to 140.6.0 ESR
+
 * Fri Nov  7 2025 Jan Horak <jhorak@redhat.com> - 140.5.0-2
 - Update to 140.5.0 ESR
 
