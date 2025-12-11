@@ -143,7 +143,7 @@ end}
 
 %if 0%{?rhel} > 7 && 0%{?rhel} < 10
   %global use_gcc_ts      1
-  %if (0%{?rhel} == 9 && %{rhel_minor_version} >= 6) || (0%{?rhel} == 8 && %{rhel_minor_version} >= 10)
+  %if 0%{?rhel} == 9 && %{rhel_minor_version} >= 6
     # clang depends on gcc-toolset-14-gcc-c++
     %global gts_version 14
   %else
@@ -191,7 +191,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.5.0
+Version:              140.6.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -222,7 +222,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20251107.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20251202.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -270,6 +270,7 @@ Patch10:              build-disable-gamepad.patch
 Patch11:              rhbz-71999-fips-youtube.patch
 Patch13:              firefox-fix-build-with-system-pipewire.patch
 Patch14:              build-system-nss.patch
+Patch15:              build-workaround-s390x.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
@@ -521,9 +522,8 @@ BuildRequires:        gcc-toolset-%{gts_version}-runtime
 BuildRequires:        gcc-toolset-%{gts_version}-binutils
 BuildRequires:        gcc-toolset-%{gts_version}-gcc
 BuildRequires:        gcc-toolset-%{gts_version}-gcc-plugin-annobin
-# Do not explicitly require gcc-toolset-%%{gts_version}-gcc-c++ instead fail
+# Do not explicitly require gcc-toolset-%{gts_version}-gcc-g++ instead fail
 # when clang is upgraded to depend on a later toolset and adjust version.
-# ERROR: The target C compiler is version 13.3.1, while the target C++ compiler is version 8.5.0. Need to use the same compiler version.
 %endif
 
 Requires:             mozilla-filesystem
@@ -1328,6 +1328,10 @@ echo "--------------------------------------------"
 %patch -P14 -p1 -b .system-nss
 %endif
 
+%ifarch s390x
+%patch -P15 -p1 -b .s390x_workaround
+%endif
+
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
 %if %{with_wasi_sdk}
 export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.builtins-wasm32.a; cat %{SOURCE38} | envsubst > %{_sourcedir}/wasi.patch
@@ -1687,14 +1691,9 @@ MOZ_LINK_FLAGS="-Wl,--no-keep-memory -Wl,--reduce-memory-overheads"
 MOZ_LINK_FLAGS="$MOZ_LINK_FLAGS -L%{_libdir}"
 %endif
 
-%ifarch %{ix86}
+%ifarch %{ix86} s390x
 export RUSTFLAGS="-Cdebuginfo=0"
 echo 'export RUSTFLAGS="-Cdebuginfo=0"' >> .mozconfig
-%endif
-
-%ifarch s390x
-export RUSTFLAGS="-Cdebuginfo=0 -C link-arg=-no-pie"
-echo 'export RUSTFLAGS="-Cdebuginfo=0 -C link-arg=-no-pie"' >> .mozconfig
 %endif
 
 %if 0%{?bundle_nss}
@@ -1762,8 +1761,11 @@ cp %{SOURCE36} .
   export PATH=%{_buildrootdir}/%{bundled_install_path}/bin:$PATH
   echo $PKG_CONFIG_PATH
 %endif
-
-./mach build -v 2>&1 || exit 1
+%ifarch s390x
+  setarch s390x -R ./mach build -v 2>&1 || exit 1
+%else
+  ./mach build -v 2>&1 || exit 1
+%endif
 
 #---------------------------------------------------------------------
 %install
@@ -2134,9 +2136,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Dec 01 2025 Release Engineering <releng@openela.org> - 140.5.0
+* Thu Dec 11 2025 Release Engineering <releng@openela.org> - 140.6.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Dec  2 2025 Jan Horak <jhorak@redhat.com> - 140.6.0-1
+- Update to 140.6.0 ESR
 
 * Fri Nov  7 2025 Jan Horak <jhorak@redhat.com> - 140.5.0-1
 - Update to 140.5.0 ESR
