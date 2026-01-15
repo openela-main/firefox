@@ -191,7 +191,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.6.0
+Version:              140.7.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -222,7 +222,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20251202.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260107.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -618,7 +618,6 @@ Provides:             bundled(picosha2)
 Provides:             bundled(pipewire)
 Provides:             bundled(PKI.js)
 Provides:             bundled(puppeteer)
-Provides:             bundled(python)
 Provides:             bundled(pywebsocket3)
 Provides:             bundled(qcms)
 Provides:             bundled(reader)
@@ -2136,9 +2135,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Dec 11 2025 Release Engineering <releng@openela.org> - 140.6.0
+* Thu Jan 15 2026 Release Engineering <releng@openela.org> - 140.7.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Wed Jan  7 2026 Jan Horak <jhorak@redhat.com> - 140.7.0-1
+- Update to 140.7.0 ESR
 
 * Tue Dec  2 2025 Jan Horak <jhorak@redhat.com> - 140.6.0-1
 - Update to 140.6.0 ESR
