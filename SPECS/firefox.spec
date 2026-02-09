@@ -191,7 +191,7 @@ end}
 
 Summary:        Mozilla Firefox Web browser
 Name:           firefox
-Version:        140.6.0
+Version:        140.7.0
 Release:        1%{?dist}
 URL:            https://www.mozilla.org/firefox/
 License:        MPLv1.1 or GPLv2+ or LGPLv2+
@@ -222,7 +222,7 @@ ExcludeArch:    aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:        firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:        firefox-langpacks-%{version}%{?pre_version}-20251202.tar.xz
+Source1:        firefox-langpacks-%{version}%{?pre_version}-20260107.tar.xz
 %endif
 Source2:        cbindgen-vendor.tar.xz
 Source3:        process-official-tarball
@@ -270,6 +270,7 @@ Patch10:        build-disable-gamepad.patch
 Patch11:        rhbz-71999-fips-youtube.patch
 Patch13:        firefox-fix-build-with-system-pipewire.patch
 Patch14:        build-system-nss.patch
+Patch15:        build-workaround-s390x.patch
 
 # -- Upstreamed patches --
 Patch51:        mozilla-bmo1170092.patch
@@ -617,7 +618,6 @@ Provides: bundled(picosha2)
 Provides: bundled(pipewire)
 Provides: bundled(PKI.js)
 Provides: bundled(puppeteer)
-Provides: bundled(python)
 Provides: bundled(pywebsocket3)
 Provides: bundled(qcms)
 Provides: bundled(reader)
@@ -1328,6 +1328,10 @@ echo "--------------------------------------------"
 %patch -P14 -p1 -b .system-nss
 %endif
 
+%ifarch s390x
+%patch -P15 -p1 -b .s390x_workaround
+%endif
+
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
 %if %{with_wasi_sdk}
 export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.builtins-wasm32.a; cat %{SOURCE38} | envsubst > %{_sourcedir}/wasi.patch
@@ -1686,6 +1690,7 @@ MOZ_LINK_FLAGS="-Wl,--no-keep-memory -Wl,--reduce-memory-overheads"
 # __global_ldflags that normally sets this.
 MOZ_LINK_FLAGS="$MOZ_LINK_FLAGS -L%{_libdir}"
 %endif
+
 %ifarch %{ix86} s390x
 export RUSTFLAGS="-Cdebuginfo=0"
 echo 'export RUSTFLAGS="-Cdebuginfo=0"' >> .mozconfig
@@ -2131,6 +2136,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
+* Wed Jan  7 2026 Jan Horak <jhorak@redhat.com> - 140.7.0-1
+- Update to 140.7.0 ESR
+
 * Tue Dec  2 2025 Jan Horak <jhorak@redhat.com> - 140.6.0-1
 - Update to 140.6.0 ESR
 
