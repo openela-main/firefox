@@ -27,7 +27,7 @@ rm -vrf ./process-tarball-dir/*/modules/zlib
 processed_tarball=${1/source/processed-source}
 
 cd ./process-tarball-dir
-tar -cf - ./* | xz -9 -T 0 -f > $processed_tarball
+tar -cf - ./* | xz -9 -T 8 -f > $processed_tarball
 mv $processed_tarball ..
 cd ..
 

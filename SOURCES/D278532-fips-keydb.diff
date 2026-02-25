@@ -1,0 +1,18 @@
+diff --git a/security/manager/ssl/nsNSSIOLayer.cpp b/security/manager/ssl/nsNSSIOLayer.cpp
+--- a/security/manager/ssl/nsNSSIOLayer.cpp
++++ b/security/manager/ssl/nsNSSIOLayer.cpp
+@@ -1256,13 +1256,10 @@
+   // success of this function.
+   PRFileDesc* sslSock = SSL_ImportFD(nullptr, fd);
+   if (!sslSock) {
+     return nullptr;
+   }
+-  if (SSL_SetPKCS11PinArg(sslSock, infoObject) != SECSuccess) {
+-    return nullptr;
+-  }
+   if (SSL_HandshakeCallback(sslSock, HandshakeCallback, infoObject) !=
+       SECSuccess) {
+     return nullptr;
+   }
+   if (SSL_SecretCallback(sslSock, SecretCallback, infoObject) != SECSuccess) {
+
