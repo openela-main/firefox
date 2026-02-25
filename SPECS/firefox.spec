@@ -191,8 +191,8 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.7.0
-Release:              1%{?dist}
+Version:              140.8.0
+Release:              2%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
 
@@ -222,7 +222,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260107.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260217.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -324,6 +324,8 @@ Patch200:             webrtc-128.0.patch
 Patch201:             D224587.1728128070.diff
 Patch202:             D224588.1728128098.diff
 Patch203:             wasi.patch
+
+Patch210:             D278532-fips-keydb.diff
 
 # ---- Test patches ----
 # Generate without context by
@@ -540,7 +542,6 @@ Obsoletes:            mozilla <= 37:1.7.13
 Provides:             webclient
 
 # Bundled libraries
-#Provides: bundled(libjxl) it's used only on nightly builds
 Provides:             bundled(abseil-cpp)
 Provides:             bundled(angle)
 Provides:             bundled(aom)
@@ -586,7 +587,7 @@ Provides:             bundled(libepoxy)
 Provides:             bundled(libfuzzer)
 Provides:             bundled(libgbm)
 Provides:             bundled(libjpeg)
-Provides:             bundled(libjxl)
+Provides:             bundled(jxl-rs)
 Provides:             bundled(libmar)
 Provides:             bundled(libmkv)
 Provides:             bundled(libnestegg)
@@ -1386,6 +1387,8 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P202 -p1 -b .D224588
 %endif
 
+%patch -P210 -p1 -b .D278532-fips-keydb
+
 # ---- Security patches ----
 
 %{__rm} -f .mozconfig
@@ -2135,9 +2138,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Thu Jan 15 2026 Release Engineering <releng@openela.org> - 140.7.0
+* Wed Feb 25 2026 Release Engineering <releng@openela.org> - 140.8.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Feb 17 2026 Jan Horak <jhorak@redhat.com> - 140.8.0-2
+- Update to 140.8.0 ESR
 
 * Wed Jan  7 2026 Jan Horak <jhorak@redhat.com> - 140.7.0-1
 - Update to 140.7.0 ESR
