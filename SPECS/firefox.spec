@@ -56,7 +56,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el9")
   if match then
-     return 7
+     return 9
   end
   match = string.match(str, ".el10_%d+")
   if match then
@@ -64,7 +64,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el10")
   if match then
-     return 1
+     return 3
   end
   return -1
 end}
@@ -108,6 +108,10 @@ end}
       %global with_wasi_sdk 1
     %endif
   %endif
+  # newer llvm requires newer wasi - we're going to fix it in the rebase to 152 esr
+  %if %{rhel_minor_version} >= 9
+    %global with_wasi_sdk 0
+  %endif
 %endif
 
 
@@ -143,7 +147,7 @@ end}
 
 %if 0%{?rhel} > 7 && 0%{?rhel} < 10
   %global use_gcc_ts      1
-  %if 0%{?rhel} == 9 && %{rhel_minor_version} >= 6
+  %if 0%{?rhel} == 9 && %{rhel_minor_version} >= 8
     # clang depends on gcc-toolset-14-gcc-c++
     %global gts_version 14
   %else
@@ -191,7 +195,7 @@ end}
 
 Summary:        Mozilla Firefox Web browser
 Name:           firefox
-Version:        140.10.0
+Version:        140.10.2
 Release:        1%{?dist}
 URL:            https://www.mozilla.org/firefox/
 License:        MPLv1.1 or GPLv2+ or LGPLv2+
@@ -222,7 +226,7 @@ ExcludeArch:    aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:        firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:        firefox-langpacks-%{version}%{?pre_version}-20260416.tar.xz
+Source1:        firefox-langpacks-%{version}%{?pre_version}-20260514.tar.xz
 %endif
 Source2:        cbindgen-vendor.tar.xz
 Source3:        process-official-tarball
@@ -271,6 +275,8 @@ Patch11:        rhbz-71999-fips-youtube.patch
 Patch13:        firefox-fix-build-with-system-pipewire.patch
 Patch14:        build-system-nss.patch
 Patch15:        build-workaround-s390x.patch
+Patch16:        build-ffvpx-failures.patch
+Patch17:        build-bindgen-0.72.1.patch
 
 # -- Upstreamed patches --
 Patch51:        mozilla-bmo1170092.patch
@@ -616,7 +622,6 @@ Provides: bundled(pdf.js)
 Provides: bundled(pdfjs)
 Provides: bundled(perfetto)
 Provides: bundled(picosha2)
-Provides: bundled(pipewire)
 Provides: bundled(PKI.js)
 Provides: bundled(puppeteer)
 Provides: bundled(pywebsocket3)
@@ -1324,12 +1329,20 @@ echo "--------------------------------------------"
 %if %{?system_pipewire}
 %patch -P13 -p1 -b .fix-build-with-system-pipewire
 %endif
+
 %if %{?system_nss}
 %patch -P14 -p1 -b .system-nss
 %endif
 
 %ifarch s390x
 %patch -P15 -p1 -b .s390x_workaround
+%endif
+%patch -P16 -p1 -b .build-ffvpx-failure
+%if (0%{?rhel} == 10 && %{rhel_minor_version} > 2)
+%patch -P17 -p1 -b .build-bindgen-0.72.1
+%endif
+%if (0%{?rhel} == 9 && %{rhel_minor_version} > 8)
+%patch -P17 -p1 -b .build-bindgen-0.72.1
 %endif
 
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
@@ -2138,6 +2151,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
+* Thu May 14 2026 Jan Horak <jhorak@redhat.com> - 140.10.2-1
+- Update to 140.10.2 ESR
+
+* Wed May  6 2026 Jan Horak <jhorak@redhat.com> - 140.10.1-1
+- Update to 140.10.1 ESR
+
 * Thu Apr 16 2026 Jan Horak <jhorak@redhat.com> - 140.10.0-1
 - Update to 140.10.0 ESR
 
