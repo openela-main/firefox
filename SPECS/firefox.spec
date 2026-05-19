@@ -325,6 +325,8 @@ Patch201:       D224587.1728128070.diff
 Patch202:       D224588.1728128098.diff
 Patch203:       wasi.patch
 
+Patch210:       D278532-fips-keydb.diff
+
 # ---- Test patches ----
 # Generate without context by
 # GENDIFF_DIFF_ARGS=-U0 gendiff firefox-xxxx .firefox-tests-xpcshell
@@ -540,7 +542,6 @@ Obsoletes:      mozilla <= 37:1.7.13
 Provides:       webclient
 
 # Bundled libraries
-#Provides: bundled(libjxl) it's used only on nightly builds
 Provides: bundled(abseil-cpp)
 Provides: bundled(angle)
 Provides: bundled(aom)
@@ -586,7 +587,7 @@ Provides: bundled(libepoxy)
 Provides: bundled(libfuzzer)
 Provides: bundled(libgbm)
 Provides: bundled(libjpeg)
-Provides: bundled(libjxl)
+Provides: bundled(jxl-rs)
 Provides: bundled(libmar)
 Provides: bundled(libmkv)
 Provides: bundled(libnestegg)
@@ -615,6 +616,7 @@ Provides: bundled(pdf.js)
 Provides: bundled(pdfjs)
 Provides: bundled(perfetto)
 Provides: bundled(picosha2)
+Provides: bundled(pipewire)
 Provides: bundled(PKI.js)
 Provides: bundled(puppeteer)
 Provides: bundled(pywebsocket3)
@@ -1322,7 +1324,6 @@ echo "--------------------------------------------"
 %if %{?system_pipewire}
 %patch -P13 -p1 -b .fix-build-with-system-pipewire
 %endif
-
 %if %{?system_nss}
 %patch -P14 -p1 -b .system-nss
 %endif
@@ -1360,7 +1361,7 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P110 -p1 -b .libaom
 %patch -P111 -p1 -b .av1-else-condition-add
 
-%if 0%{?rhel} >= 10
+%if 0%{?rhel} >= 10 && %{rhel_minor_version} >= 1
 # ML-DSA support
 %patch -P120 -p1 -b .integrate-ml-dsa-signature-verification-for-pkix-certificate-chain-validation
 %patch -P121 -p1 -b .add-ml-dsa-certificate-support-to-certviewer
@@ -1385,6 +1386,8 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P201 -p1 -b .D224587
 %patch -P202 -p1 -b .D224588
 %endif
+
+%patch -P210 -p1 -b .D278532-fips-keydb
 
 # ---- Security patches ----
 
@@ -1761,7 +1764,7 @@ cp %{SOURCE36} .
   echo $PKG_CONFIG_PATH
 %endif
 %ifarch s390x
-  setarch -R ./mach build -v 2>&1 || exit 1
+  setarch s390x -R ./mach build -v 2>&1 || exit 1
 %else
   ./mach build -v 2>&1 || exit 1
 %endif
@@ -2153,7 +2156,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 * Tue Dec  2 2025 Jan Horak <jhorak@redhat.com> - 140.6.0-1
 - Update to 140.6.0 ESR
 
-* Fri Nov  7 2025 Jan Horak <jhorak@redhat.com> - 140.5.0-2
+* Fri Nov  7 2025 Jan Horak <jhorak@redhat.com> - 140.5.0-1
 - Update to 140.5.0 ESR
 
 * Fri Oct 10 2025 Jan Horak <jhorak@redhat.com> - 140.4.0-3
@@ -2167,6 +2170,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 * Tue Aug 12 2025 Jan Grulich <jgrulich@redhat.com> - 128.14.0-1
 - Update to 128.14.0 build1
+
+* Tue Aug 05 2025 Tomas Popela <tpopela@redhat.com> - 128.13.0-2
+- Bump the NSS requirements as the rebased NSS is already shipped in c10s
 
 * Tue Jul 15 2025 Eike Rathke <erack@redhat.com> - 128.13.0-1
 - Update to 128.13.0 build1
@@ -2183,17 +2189,11 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 * Tue Apr 22 2025 Eike Rathke <erack@redhat.com> - 128.10.0-1
 - Update to 128.10.0 build1
 
-* Mon Apr 14 2025 Eike Rathke <erack@redhat.com> - 128.9.0-3
-- Bump NVR to rebuild for rhel-10.0.z
-
 * Mon Mar 31 2025 Eike Rathke <erack@redhat.com> - 128.9.0-2
 - Update to 128.9.0 build2
 
 * Tue Mar 25 2025 Eike Rathke <erack@redhat.com> - 128.9.0-1
 - Update to 128.9.0 build1
-
-* Tue Mar 25 2025 Eike Rathke <erack@redhat.com> - 128.8.0-2
-- Bump NVR for rebuild
 
 * Mon Feb 24 2025 Eike Rathke <erack@redhat.com> - 128.8.0-1
 - Update to 128.8.0 build1
