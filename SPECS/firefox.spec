@@ -56,7 +56,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el9")
   if match then
-     return 7
+     return 8
   end
   match = string.match(str, ".el10_%d+")
   if match then
@@ -143,7 +143,7 @@ end}
 
 %if 0%{?rhel} > 7 && 0%{?rhel} < 10
   %global use_gcc_ts      1
-  %if 0%{?rhel} == 9 && %{rhel_minor_version} >= 6
+  %if 0%{?rhel} == 9 && %{rhel_minor_version} >= 8
     # clang depends on gcc-toolset-14-gcc-c++
     %global gts_version 14
   %else
@@ -191,7 +191,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.10.0
+Version:              140.10.1
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -222,7 +222,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260416.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260506.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -271,6 +271,7 @@ Patch11:              rhbz-71999-fips-youtube.patch
 Patch13:              firefox-fix-build-with-system-pipewire.patch
 Patch14:              build-system-nss.patch
 Patch15:              build-workaround-s390x.patch
+Patch16:              build-ffvpx-failures.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
@@ -524,6 +525,7 @@ BuildRequires:        gcc-toolset-%{gts_version}-runtime
 BuildRequires:        gcc-toolset-%{gts_version}-binutils
 BuildRequires:        gcc-toolset-%{gts_version}-gcc
 BuildRequires:        gcc-toolset-%{gts_version}-gcc-plugin-annobin
+BuildRequires:        gcc-toolset-%{gts_version}-gcc-c++
 # Do not explicitly require gcc-toolset-%{gts_version}-gcc-g++ instead fail
 # when clang is upgraded to depend on a later toolset and adjust version.
 %endif
@@ -616,6 +618,7 @@ Provides:             bundled(pdf.js)
 Provides:             bundled(pdfjs)
 Provides:             bundled(perfetto)
 Provides:             bundled(picosha2)
+Provides:             bundled(pipewire)
 Provides:             bundled(PKI.js)
 Provides:             bundled(puppeteer)
 Provides:             bundled(pywebsocket3)
@@ -1331,6 +1334,7 @@ echo "--------------------------------------------"
 %ifarch s390x
 %patch -P15 -p1 -b .s390x_workaround
 %endif
+%patch -P16 -p1 -b .build-ffvpx-failure
 
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
 %if %{with_wasi_sdk}
@@ -2138,9 +2142,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Apr 27 2026 Release Engineering <releng@openela.org> - 140.10.0
+* Tue May 19 2026 Release Engineering <releng@openela.org> - 140.10.1
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Wed May  6 2026 Jan Horak <jhorak@redhat.com> - 140.10.1-1
+- Update to 140.10.1 ESR
 
 * Thu Apr 16 2026 Jan Horak <jhorak@redhat.com> - 140.10.0-1
 - Update to 140.10.0 ESR
@@ -2186,6 +2193,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 * Mon May 19 2025 Eike Rathke <erack@redhat.com> - 128.10.1-1
 - Update to 128.10.1
+
+* Tue Aug 05 2025 Tomas Popela <tpopela@redhat.com> - 128.10.0-2
+- Bump the NSS requirements as the rebased NSS is already shipped in c10s
 
 * Tue Apr 22 2025 Eike Rathke <erack@redhat.com> - 128.10.0-1
 - Update to 128.10.0 build1

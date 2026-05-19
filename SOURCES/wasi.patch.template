@@ -10,3 +10,14 @@ diff -up firefox-121.0.1/toolkit/moz.configure.wasi firefox-121.0.1/toolkit/moz.
          return []
  
      set_config("WASI_SYSROOT", wasi_sysroot)
+diff -up firefox-140.7.0/wasi-sdk-20/src/llvm-project/llvm/include/llvm/ADT/SmallVector.h.fix-rhel98 firefox-140.7.0/wasi-sdk-20/src/llvm-project/llvm/include/llvm/ADT/SmallVector.h
+--- firefox-140.7.0/wasi-sdk-20/src/llvm-project/llvm/include/llvm/ADT/SmallVector.h.fix-rhel98	2026-01-12 21:44:20.369015903 +0100
++++ firefox-140.7.0/wasi-sdk-20/src/llvm-project/llvm/include/llvm/ADT/SmallVector.h	2026-01-12 21:44:25.598005369 +0100
+@@ -29,6 +29,7 @@
+ #include <new>
+ #include <type_traits>
+ #include <utility>
++#include <cstdint>
+ 
+ namespace llvm {
+ 

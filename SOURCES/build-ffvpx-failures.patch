@@ -1,0 +1,29 @@
+
+# HG changeset patch
+# User az <azebrowski@mozilla.com>
+# Date 1777295119 0
+# Node ID be2954efe4c16426fde496c22f4595687252aad2
+# Parent  fc073e8a30dbed81021ca06b7b6dd9b4a20a61bf
+Bug 2031958 - Fix Solaris/GCC -Wincompatible-pointer-types build error in ffvpx parser_list.c  a=dmeehan DONTBUILD
+
+Original Revision: https://phabricator.services.mozilla.com/D295104
+
+Differential Revision: https://phabricator.services.mozilla.com/D295303
+
+
+diff --git a/media/ffvpx/libavcodec/parser_list.c b/media/ffvpx/libavcodec/parser_list.c
+--- a/media/ffvpx/libavcodec/parser_list.c
++++ b/media/ffvpx/libavcodec/parser_list.c
+@@ -1,10 +1,10 @@
+ #include "config_components.h"
+ 
+-static const AVCodecParser * const parser_list[] = {
++static const FFCodecParser * const parser_list[] = {
+ #if CONFIG_VP8_PARSER
+     &ff_vp8_parser,
+ #endif
+ #if CONFIG_VP9_PARSER
+     &ff_vp9_parser,
+ #endif
+     NULL };
+
