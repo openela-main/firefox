@@ -56,7 +56,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el9")
   if match then
-     return 8
+     return 9
   end
   match = string.match(str, ".el10_%d+")
   if match then
@@ -64,7 +64,7 @@ function dist_to_rhel_minor(str, start)
   end
   match = string.match(str, ".el10")
   if match then
-     return 1
+     return 3
   end
   return -1
 end}
@@ -107,6 +107,10 @@ end}
     %ifnarch s390x
       %global with_wasi_sdk 1
     %endif
+  %endif
+  # newer llvm requires newer wasi - we're going to fix it in the rebase to 152 esr
+  %if %{rhel_minor_version} >= 9
+    %global with_wasi_sdk 0
   %endif
 %endif
 
@@ -191,7 +195,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.10.1
+Version:              140.10.2
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -222,7 +226,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260506.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260514.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -272,6 +276,7 @@ Patch13:              firefox-fix-build-with-system-pipewire.patch
 Patch14:              build-system-nss.patch
 Patch15:              build-workaround-s390x.patch
 Patch16:              build-ffvpx-failures.patch
+Patch17:              build-bindgen-0.72.1.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
@@ -618,7 +623,6 @@ Provides:             bundled(pdf.js)
 Provides:             bundled(pdfjs)
 Provides:             bundled(perfetto)
 Provides:             bundled(picosha2)
-Provides:             bundled(pipewire)
 Provides:             bundled(PKI.js)
 Provides:             bundled(puppeteer)
 Provides:             bundled(pywebsocket3)
@@ -1335,6 +1339,12 @@ echo "--------------------------------------------"
 %patch -P15 -p1 -b .s390x_workaround
 %endif
 %patch -P16 -p1 -b .build-ffvpx-failure
+%if (0%{?rhel} == 10 && %{rhel_minor_version} > 2)
+%patch -P17 -p1 -b .build-bindgen-0.72.1
+%endif
+%if (0%{?rhel} == 9 && %{rhel_minor_version} > 8)
+%patch -P17 -p1 -b .build-bindgen-0.72.1
+%endif
 
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
 %if %{with_wasi_sdk}
@@ -2142,9 +2152,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Tue May 19 2026 Release Engineering <releng@openela.org> - 140.10.1
+* Tue May 26 2026 Release Engineering <releng@openela.org> - 140.10.2
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Thu May 14 2026 Jan Horak <jhorak@redhat.com> - 140.10.2-1
+- Update to 140.10.2 ESR
 
 * Wed May  6 2026 Jan Horak <jhorak@redhat.com> - 140.10.1-1
 - Update to 140.10.1 ESR
@@ -2182,6 +2195,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 * Tue Aug 12 2025 Jan Grulich <jgrulich@redhat.com> - 128.14.0-1
 - Update to 128.14.0 build1
 
+* Tue Aug 05 2025 Tomas Popela <tpopela@redhat.com> - 128.13.0-2
+- Bump the NSS requirements as the rebased NSS is already shipped in c10s
+
 * Tue Jul 15 2025 Eike Rathke <erack@redhat.com> - 128.13.0-1
 - Update to 128.13.0 build1
 
@@ -2193,9 +2209,6 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 * Mon May 19 2025 Eike Rathke <erack@redhat.com> - 128.10.1-1
 - Update to 128.10.1
-
-* Tue Aug 05 2025 Tomas Popela <tpopela@redhat.com> - 128.10.0-2
-- Bump the NSS requirements as the rebased NSS is already shipped in c10s
 
 * Tue Apr 22 2025 Eike Rathke <erack@redhat.com> - 128.10.0-1
 - Update to 128.10.0 build1
@@ -2224,7 +2237,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 * Mon Nov 18 2024 Jan Grulich <jgrulich@redhat.com - 128.4.0-2
 - Enable PipeWire camera support for RHEL 10
   + backport upstream fixes for PipeWire camera support
-  Fixes: RHEL-64749
+  Resolves: RHEL-64749
 
 * Tue Oct 22 2024 Eike Rathke <erack@redhat.com> - 128.4.0-1
 - Update to 128.4.0 build1
