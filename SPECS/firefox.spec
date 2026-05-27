@@ -195,7 +195,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.10.2
+Version:              140.11.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -226,7 +226,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260514.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260520.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -275,7 +275,6 @@ Patch11:              rhbz-71999-fips-youtube.patch
 Patch13:              firefox-fix-build-with-system-pipewire.patch
 Patch14:              build-system-nss.patch
 Patch15:              build-workaround-s390x.patch
-Patch16:              build-ffvpx-failures.patch
 Patch17:              build-bindgen-0.72.1.patch
 
 # -- Upstreamed patches --
@@ -1336,7 +1335,6 @@ echo "--------------------------------------------"
 %ifarch s390x
 %patch -P15 -p1 -b .s390x_workaround
 %endif
-%patch -P16 -p1 -b .build-ffvpx-failure
 %if (0%{?rhel} == 10 && %{rhel_minor_version} > 2)
 %patch -P17 -p1 -b .build-bindgen-0.72.1
 %endif
@@ -2150,9 +2148,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Tue May 26 2026 Release Engineering <releng@openela.org> - 140.10.2
+* Wed May 27 2026 Release Engineering <releng@openela.org> - 140.11.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Wed May 20 2026 Jan Horak <jhorak@redhat.com> - 140.11.0-1
+- Update to 140.11.0 ESR
 
 * Thu May 14 2026 Jan Horak <jhorak@redhat.com> - 140.10.2-1
 - Update to 140.10.2 ESR
