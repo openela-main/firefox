@@ -195,7 +195,7 @@ end}
 
 Summary:        Mozilla Firefox Web browser
 Name:           firefox
-Version:        140.11.0
+Version:        140.12.0
 Release:        1%{?dist}
 URL:            https://www.mozilla.org/firefox/
 License:        MPLv1.1 or GPLv2+ or LGPLv2+
@@ -226,7 +226,7 @@ ExcludeArch:    aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:        firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:        firefox-langpacks-%{version}%{?pre_version}-20260520.tar.xz
+Source1:        firefox-langpacks-%{version}%{?pre_version}-20260610.tar.xz
 %endif
 Source2:        cbindgen-vendor.tar.xz
 Source3:        process-official-tarball
@@ -2149,6 +2149,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
+* Wed Jun 10 2026 Jan Horak <jhorak@redhat.com> - 140.12.0-1
+- Update to 140.12.0 ESR
+
 * Wed May 20 2026 Jan Horak <jhorak@redhat.com> - 140.11.0-1
 - Update to 140.11.0 ESR
 
