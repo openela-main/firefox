@@ -121,6 +121,10 @@ end}
 %global nspr_version_max  4.37
 %global nss_version       3.112
 %global nss_version_max   3.113
+%if 0%{?rhel} >= 10 && 0%{?rhel_minor_version} > 2
+%global nss_version_max   3.125
+%global nspr_version_max  4.40
+%endif
 %global rust_version      1.84
 %global system_libvpx     0
 %if 0%{?rhel} >= 9 && %{rhel_minor_version} > 5
@@ -195,7 +199,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.12.0
+Version:              140.13.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -226,7 +230,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260610.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260716.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -315,6 +319,7 @@ Patch123:             firefox-adapt-ml-dsa-support-to-rhel-nss.patch
 Patch124:             firefox-enable-ml-dsa-in-manager-ssl.patch
 # RHEL downstream only - add mlkem768-secp256r1 support
 Patch125:             firefox-add-mlkem768-secp256r1-support.patch
+Patch126:             firefox-add-mlkem768-secp256r1-support-nss-3.124.patch
 
 # ---- Fedora specific patches ----
 Patch151:             firefox-enable-addons.patch
@@ -331,6 +336,8 @@ Patch202:             D224588.1728128098.diff
 Patch203:             wasi.patch
 
 Patch210:             D278532-fips-keydb.diff
+
+Patch300:             libaom-CVE-2026-56208.patch
 
 # ---- Test patches ----
 # Generate without context by
@@ -1376,9 +1383,17 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P120 -p1 -b .integrate-ml-dsa-signature-verification-for-pkix-certificate-chain-validation
 %patch -P121 -p1 -b .add-ml-dsa-certificate-support-to-certviewer
 %patch -P122 -p1 -b .enable-ml-dsa-signature-verification-for-certificate-chain-validation
+%if 0%{?rhel_minor_version} <= 2
 %patch -P123 -p1 -b .adapt-ml-dsa-support-to-rhel-nss
+%endif
 %patch -P124 -p1 -b .enable-ml-dsa-in-manager-ssl
+
+%if 0%{?rhel_minor_version} <= 2
 %patch -P125 -p1 -b .add-mlkem768-secp256r1-support
+%else
+%patch -P126 -p1 -b .add-mlkem768-secp256r1-support-nss-3.124
+%endif
+
 %endif
 
 # ---- Fedora specific patches ----
@@ -1399,7 +1414,12 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 
 %patch -P210 -p1 -b .D278532-fips-keydb
 
+
+
 # ---- Security patches ----
+pushd third_party/aom
+%patch -P300 -p1 -b .libaom-CVE-2026-56208
+popd
 
 %{__rm} -f .mozconfig
 %{__cp} %{SOURCE10} .mozconfig
@@ -2148,9 +2168,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Jun 22 2026 Release Engineering <releng@openela.org> - 140.12.0
+* Tue Jul 28 2026 Release Engineering <releng@openela.org> - 140.13.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Thu Jul 16 2026 Jan Horak <jhorak@redhat.com> - 140.13.0-1
+- Update to 140.13.0 ESR
 
 * Wed Jun 10 2026 Jan Horak <jhorak@redhat.com> - 140.12.0-1
 - Update to 140.12.0 ESR
