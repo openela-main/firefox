@@ -1,6 +1,6 @@
-diff -up firefox-140.0/dom/crypto/WebCryptoTask.cpp.D225034.1750779491 firefox-140.0/dom/crypto/WebCryptoTask.cpp
---- firefox-140.0/dom/crypto/WebCryptoTask.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/crypto/WebCryptoTask.cpp	2025-06-26 12:19:09.532341457 +0200
+diff -up firefox-140.13.0/dom/crypto/WebCryptoTask.cpp.D225034.1750779491 firefox-140.13.0/dom/crypto/WebCryptoTask.cpp
+--- firefox-140.13.0/dom/crypto/WebCryptoTask.cpp.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/crypto/WebCryptoTask.cpp	2026-07-16 10:14:36.229195613 +0200
 @@ -120,60 +120,6 @@ enum TelemetryAlgorithm {
      }                                                \
    }
@@ -93,9 +93,9 @@ diff -up firefox-140.0/dom/crypto/WebCryptoTask.cpp.D225034.1750779491 firefox-1
  class DeriveX25519BitsTask : public ReturnArrayBufferViewTask {
   public:
    DeriveX25519BitsTask(JSContext* aCx, const ObjectOrString& aAlgorithm,
-diff -up firefox-140.0/dom/crypto/WebCryptoTask.h.D225034.1750779491 firefox-140.0/dom/crypto/WebCryptoTask.h
---- firefox-140.0/dom/crypto/WebCryptoTask.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/crypto/WebCryptoTask.h	2025-06-26 12:14:42.300401357 +0200
+diff -up firefox-140.13.0/dom/crypto/WebCryptoTask.h.D225034.1750779491 firefox-140.13.0/dom/crypto/WebCryptoTask.h
+--- firefox-140.13.0/dom/crypto/WebCryptoTask.h.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/crypto/WebCryptoTask.h	2026-07-16 10:14:36.229516637 +0200
 @@ -176,31 +176,60 @@ class WebCryptoTask : public CancelableR
    nsresult mRv;
  };
@@ -177,9 +177,9 @@ diff -up firefox-140.0/dom/crypto/WebCryptoTask.h.D225034.1750779491 firefox-140
  }  // namespace mozilla::dom
  
  #endif  // mozilla_dom_WebCryptoTask_h
-diff -up firefox-140.0/dom/media/webrtc/components.conf.D225034.1750779491 firefox-140.0/dom/media/webrtc/components.conf
---- firefox-140.0/dom/media/webrtc/components.conf.D225034.1750779491	2025-06-26 12:14:42.300775330 +0200
-+++ firefox-140.0/dom/media/webrtc/components.conf	2025-06-26 12:14:42.300775330 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/components.conf.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/components.conf
+--- firefox-140.13.0/dom/media/webrtc/components.conf.D225034.1750779491	2026-07-16 10:14:36.229646922 +0200
++++ firefox-140.13.0/dom/media/webrtc/components.conf	2026-07-16 10:14:36.229646922 +0200
 @@ -0,0 +1,14 @@
 +# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
 +# vim: set filetype=python:
@@ -195,9 +195,9 @@ diff -up firefox-140.0/dom/media/webrtc/components.conf.D225034.1750779491 firef
 +        'constructor': 'mozilla::dom::NewRTCCertService',
 +    },
 +]
-diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp
---- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp	2025-06-26 12:14:42.301060154 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp
+--- firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.D225034.1750779491	2026-07-15 22:30:30.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp	2026-07-16 10:14:36.229807534 +0200
 @@ -104,13 +104,15 @@ class MediaTransportHandlerSTS : public
                           // via IPC anymore
                           const nsTArray<NrIceStunAddr>& aStunAddrs) override;
@@ -248,9 +248,9 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.cpp.D225034.
          if (!dtlsIdentity) {
            MOZ_ASSERT(false);
            return;
-diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h
---- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h	2025-06-26 12:14:42.301442663 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.h
+--- firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandler.h	2026-07-16 10:14:36.229973676 +0200
 @@ -98,8 +98,8 @@ class MediaTransportHandler {
        const std::string& aTransportId, const std::string& aLocalUfrag,
        const std::string& aLocalPwd, size_t aComponentCount,
@@ -262,9 +262,9 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandler.h.D225034.17
        bool aPrivacyRequested) = 0;
  
    virtual void RemoveTransportsExcept(
-diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp
---- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp	2025-06-26 12:14:42.301675179 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp
+--- firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp	2026-07-16 10:14:36.230079886 +0200
 @@ -269,17 +269,16 @@ void MediaTransportHandlerIPC::ActivateT
      const std::string& aTransportId, const std::string& aLocalUfrag,
      const std::string& aLocalPwd, size_t aComponentCount,
@@ -287,9 +287,9 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.cpp.D2250
                                          aDigests, aPrivacyRequested);
          }
        },
-diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h
---- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h	2025-06-26 12:14:42.301923105 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h
+--- firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h	2026-07-16 10:14:36.230193690 +0200
 @@ -49,13 +49,15 @@ class MediaTransportHandlerIPC final : p
                           // this up internally
                           const nsTArray<NrIceStunAddr>& aStunAddrs) override;
@@ -313,10 +313,10 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportHandlerIPC.h.D225034
  
    void RemoveTransportsExcept(
        const std::set<std::string>& aTransportIds) override;
-diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp
---- firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp	2025-06-26 12:14:42.302133961 +0200
-@@ -174,12 +174,12 @@ mozilla::ipc::IPCResult MediaTransportPa
+diff -up firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp
+--- firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp	2026-07-16 10:55:47.952165617 +0200
+@@ -174,12 +174,16 @@ mozilla::ipc::IPCResult MediaTransportPa
  mozilla::ipc::IPCResult MediaTransportParent::RecvActivateTransport(
      const string& transportId, const string& localUfrag, const string& localPwd,
      const int& componentCount, const string& remoteUfrag,
@@ -326,6 +326,10 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1
 +    const string& remotePwd, nsTArray<uint8_t>&& certFingerprint,
 +    const int& authType, const bool& dtlsClient, const DtlsDigestList& digests,
 +    const bool& privacyRequested) {
++  if (certFingerprint.Length() != mozilla::dom::CertFingerprint::sHashByteLen) {
++    return ipc::IPCResult::Fail(WrapNotNull(this), __func__,
++                                "Invalid certFingerprint length");
++  }	
    mImpl->mHandler->ActivateTransport(
        transportId, localUfrag, localPwd, componentCount, remoteUfrag, remotePwd,
 -      keyDer, certDer, static_cast<SSLKEAType>(authType), dtlsClient, digests,
@@ -333,10 +337,10 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/MediaTransportParent.cpp.D225034.1
        privacyRequested);
    return ipc::IPCResult::Ok();
  }
-diff -up firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
---- firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp	2025-06-26 12:14:42.302823315 +0200
-@@ -4320,9 +4320,8 @@ void PeerConnectionImpl::UpdateTransport
+diff -up firefox-140.13.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp
+--- firefox-140.13.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.1750779491	2026-07-15 22:30:30.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp	2026-07-16 10:14:36.230616234 +0200
+@@ -4346,9 +4346,8 @@ void PeerConnectionImpl::UpdateTransport
          candidates.end());
    }
  
@@ -348,7 +352,7 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.175
    if (NS_FAILED(rv)) {
      CSFLogError(LOGTAG, "%s: Failed to serialize DTLS identity: %d",
                  __FUNCTION__, (int)rv);
-@@ -4338,7 +4337,7 @@ void PeerConnectionImpl::UpdateTransport
+@@ -4364,7 +4363,7 @@ void PeerConnectionImpl::UpdateTransport
  
    mTransportHandler->ActivateTransport(
        transport.mTransportId, transport.mLocalUfrag, transport.mLocalPwd,
@@ -357,9 +361,9 @@ diff -up firefox-140.0/dom/media/webrtc/jsapi/PeerConnectionImpl.cpp.D225034.175
        transport.mDtls->GetRole() == JsepDtlsTransport::kJsepDtlsClient, digests,
        PrivacyRequested());
  
-diff -up firefox-140.0/dom/media/webrtc/MediaTransportParent.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/MediaTransportParent.h
---- firefox-140.0/dom/media/webrtc/MediaTransportParent.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/MediaTransportParent.h	2025-06-26 12:14:42.303449191 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/MediaTransportParent.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/MediaTransportParent.h
+--- firefox-140.13.0/dom/media/webrtc/MediaTransportParent.h.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/MediaTransportParent.h	2026-07-16 10:14:36.230938941 +0200
 @@ -40,9 +40,9 @@ class MediaTransportParent : public dom:
        const string& transportId, const string& localUfrag,
        const string& localPwd, const int& componentCount,
@@ -373,9 +377,9 @@ diff -up firefox-140.0/dom/media/webrtc/MediaTransportParent.h.D225034.175077949
    mozilla::ipc::IPCResult RecvRemoveTransportsExcept(
        const StringVector& transportIds);
    mozilla::ipc::IPCResult RecvStartIceChecks(const bool& isControlling,
-diff -up firefox-140.0/dom/media/webrtc/moz.build.D225034.1750779491 firefox-140.0/dom/media/webrtc/moz.build
---- firefox-140.0/dom/media/webrtc/moz.build.D225034.1750779491	2025-06-17 18:15:14.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/moz.build	2025-06-26 12:14:42.303672821 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/moz.build.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/moz.build
+--- firefox-140.13.0/dom/media/webrtc/moz.build.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/moz.build	2026-07-16 10:14:36.231036054 +0200
 @@ -41,6 +41,18 @@ SOURCES += [
      "CubebDeviceEnumerator.cpp",
  ]
@@ -419,9 +423,9 @@ diff -up firefox-140.0/dom/media/webrtc/moz.build.D225034.1750779491 firefox-140
  ]
  
  include("/ipc/chromium/chromium-config.mozbuild")
-diff -up firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl.D225034.1750779491 firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl
---- firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl.D225034.1750779491	2025-06-26 12:14:42.303932017 +0200
-+++ firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl	2025-06-26 12:14:42.303932017 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/nsIRTCCertService.idl.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/nsIRTCCertService.idl
+--- firefox-140.13.0/dom/media/webrtc/nsIRTCCertService.idl.D225034.1750779491	2026-07-16 10:14:36.231122737 +0200
++++ firefox-140.13.0/dom/media/webrtc/nsIRTCCertService.idl	2026-07-16 10:14:36.231122737 +0200
 @@ -0,0 +1,34 @@
 +/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 +/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -457,9 +461,9 @@ diff -up firefox-140.0/dom/media/webrtc/nsIRTCCertService.idl.D225034.1750779491
 +    // Get cert
 +    [notxpcom, nostdcall] RTCCertificatePromise getCertificate([const] in CertFingerprint aCertFingerprint);
 +};
-diff -up firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl.D225034.1750779491 firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl
---- firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl	2025-06-26 12:14:42.304154235 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/PMediaTransport.ipdl.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/PMediaTransport.ipdl
+--- firefox-140.13.0/dom/media/webrtc/PMediaTransport.ipdl.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/PMediaTransport.ipdl	2026-07-16 10:14:36.231214699 +0200
 @@ -62,8 +62,7 @@ parent:
                            int componentCount,
                            string remoteUfrag,
@@ -470,9 +474,9 @@ diff -up firefox-140.0/dom/media/webrtc/PMediaTransport.ipdl.D225034.1750779491 
                            int authType,
                            bool dtlsClient,
                            DtlsDigestList digests,
-diff -up firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.D225034.1750779491 firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl
---- firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.D225034.1750779491	2025-06-26 12:14:42.304369078 +0200
-+++ firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl	2025-06-26 12:14:42.304369078 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl
+--- firefox-140.13.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.D225034.1750779491	2026-07-16 10:14:36.231275734 +0200
++++ firefox-140.13.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl	2026-07-16 10:14:36.231275734 +0200
 @@ -0,0 +1,33 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -507,9 +511,9 @@ diff -up firefox-140.0/dom/media/webrtc/PRTCCertServiceTransaction.ipdl.D225034.
 +
 +}
 +}
-diff -up firefox-140.0/dom/media/webrtc/RTCCertCache.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertCache.cpp
---- firefox-140.0/dom/media/webrtc/RTCCertCache.cpp.D225034.1750779491	2025-06-26 12:14:42.304591095 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertCache.cpp	2025-06-26 12:14:42.304591095 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertCache.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertCache.cpp
+--- firefox-140.13.0/dom/media/webrtc/RTCCertCache.cpp.D225034.1750779491	2026-07-16 10:14:36.231350044 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertCache.cpp	2026-07-16 10:14:36.231350044 +0200
 @@ -0,0 +1,48 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -559,9 +563,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertCache.cpp.D225034.1750779491 fire
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-140.0/dom/media/webrtc/RTCCertCache.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertCache.h
---- firefox-140.0/dom/media/webrtc/RTCCertCache.h.D225034.1750779491	2025-06-26 12:14:42.304801480 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertCache.h	2025-06-26 12:14:42.304801480 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertCache.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertCache.h
+--- firefox-140.13.0/dom/media/webrtc/RTCCertCache.h.D225034.1750779491	2026-07-16 10:14:36.231434282 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertCache.h	2026-07-16 10:14:36.231434282 +0200
 @@ -0,0 +1,36 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -599,9 +603,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertCache.h.D225034.1750779491 firefo
 +}  // namespace mozilla::dom
 +
 +#endif  // mozilla_dom_CertCache_h
-diff -up firefox-140.0/dom/media/webrtc/RTCCertificate.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertificate.cpp
---- firefox-140.0/dom/media/webrtc/RTCCertificate.cpp.D225034.1750779491	2025-06-17 18:15:14.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertificate.cpp	2025-06-26 12:38:54.418795430 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertificate.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertificate.cpp
+--- firefox-140.13.0/dom/media/webrtc/RTCCertificate.cpp.D225034.1750779491	2026-07-15 22:30:30.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertificate.cpp	2026-07-16 10:14:36.231618328 +0200
 @@ -25,13 +25,12 @@
  #include "mozilla/UniquePtr.h"
  #include "mozilla/dom/BindingDeclarations.h"
@@ -1102,9 +1106,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertificate.cpp.D225034.1750779491 fi
      return nullptr;
    }
  
-diff -up firefox-140.0/dom/media/webrtc/RTCCertificate.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertificate.h
---- firefox-140.0/dom/media/webrtc/RTCCertificate.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertificate.h	2025-06-26 12:42:14.067026422 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertificate.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertificate.h
+--- firefox-140.13.0/dom/media/webrtc/RTCCertificate.h.D225034.1750779491	2026-07-15 22:30:30.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertificate.h	2026-07-16 10:14:36.231764603 +0200
 @@ -15,7 +15,11 @@
  #include "mozilla/AlreadyAddRefed.h"
  #include "mozilla/Assertions.h"
@@ -1192,9 +1196,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertificate.h.D225034.1750779491 fire
  };
  
  }  // namespace dom
-diff -up firefox-140.0/dom/media/webrtc/RTCCertService.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertService.cpp
---- firefox-140.0/dom/media/webrtc/RTCCertService.cpp.D225034.1750779491	2025-06-26 12:14:42.306004069 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertService.cpp	2025-06-26 12:14:42.306004069 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertService.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertService.cpp
+--- firefox-140.13.0/dom/media/webrtc/RTCCertService.cpp.D225034.1750779491	2026-07-16 10:14:36.231829576 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertService.cpp	2026-07-16 10:14:36.231829576 +0200
 @@ -0,0 +1,154 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -1350,10 +1354,10 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertService.cpp.D225034.1750779491 fi
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp
---- firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.1750779491	2025-06-26 12:14:42.306223801 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp	2025-06-26 12:14:42.306223801 +0200
-@@ -0,0 +1,77 @@
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.cpp
+--- firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.1750779491	2026-07-16 10:14:36.231931257 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.cpp	2026-07-16 10:51:54.325866262 +0200
+@@ -0,0 +1,86 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 +/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -1368,7 +1372,11 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.175077949
 +namespace mozilla::dom {
 +
 +CertFingerprint::CertFingerprint(const nsTArray<uint8_t>& aCertFingerprint) {
-+  MOZ_ASSERT(aCertFingerprint.Length() == sHashByteLen);
++  if (aCertFingerprint.Length() != sHashByteLen) {
++    memset(mHash, 0, sizeof(mHash));
++    MOZ_ASSERT(false, "Unexpected cert fingerprint length");
++    return;
++  }
 +  memcpy(mHash, const_cast<uint8_t*>(aCertFingerprint.Elements()),
 +         static_cast<unsigned int>(aCertFingerprint.Length()));
 +}
@@ -1408,6 +1416,11 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.175077949
 +
 +PK11RSAGenParams DeserializeRSAParam(nsTArray<uint8_t>* aParams) {
 +  MOZ_ASSERT(aParams->Length() <= sizeof(PK11RSAGenParams));
++  if (!aParams || aParams->Length() != sizeof(PK11RSAGenParams)) {
++    // return zeroed params
++    PK11RSAGenParams out{};
++    return out;
++  }
 +  return *(reinterpret_cast<PK11RSAGenParams*>(aParams->Elements()));
 +}
 +
@@ -1431,9 +1444,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.cpp.D225034.175077949
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceData.h
---- firefox-140.0/dom/media/webrtc/RTCCertServiceData.h.D225034.1750779491	2025-06-26 12:14:42.306399401 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertServiceData.h	2025-06-26 12:14:42.306399401 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.h
+--- firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.h.D225034.1750779491	2026-07-16 10:14:36.232004925 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertServiceData.h	2026-07-16 10:14:36.232004925 +0200
 @@ -0,0 +1,105 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -1540,9 +1553,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceData.h.D225034.1750779491 
 +}  // namespace mozilla
 +
 +#endif  // mozilla_dom_RTCCertServiceGlobal_h_
-diff -up firefox-140.0/dom/media/webrtc/RTCCertService.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertService.h
---- firefox-140.0/dom/media/webrtc/RTCCertService.h.D225034.1750779491	2025-06-26 12:14:42.306588336 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertService.h	2025-06-26 12:14:42.306588336 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertService.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertService.h
+--- firefox-140.13.0/dom/media/webrtc/RTCCertService.h.D225034.1750779491	2026-07-16 10:14:36.232090075 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertService.h	2026-07-16 10:14:36.232090075 +0200
 @@ -0,0 +1,49 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -1593,10 +1606,10 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertService.h.D225034.1750779491 fire
 +}  // namespace mozilla::dom
 +
 +#endif  // mozilla_dom_CertServiceChild_h
-diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp
---- firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779491	2025-06-26 12:14:42.306799462 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp	2025-06-26 12:14:42.306799462 +0200
-@@ -0,0 +1,353 @@
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.cpp
+--- firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779491	2026-07-16 10:14:36.232160147 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.cpp	2026-07-16 10:53:37.462210891 +0200
+@@ -0,0 +1,357 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 +/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -1796,6 +1809,10 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779
 +  mSignatureAlg = aSignatureAlg;
 +
 +  if (mMechanism == CKM_RSA_PKCS_KEY_PAIR_GEN) {
++    if (aParam.Length() != sizeof(PK11RSAGenParams)) {
++      mGenPromise->Reject(NS_ERROR_INVALID_ARG, __func__);
++      return mGenPromise;
++    }    
 +    mRsaParams = DeserializeRSAParam(&aParam);
 +    mParam = &mRsaParams;
 +  } else if (mMechanism == CKM_EC_KEY_PAIR_GEN) {
@@ -1950,9 +1967,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceParent.cpp.D225034.1750779
 +}
 +
 +}  // namespace mozilla::dom
-diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h
---- firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h.D225034.1750779491	2025-06-26 12:14:42.307072966 +0200
-+++ firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h	2025-06-26 12:14:42.307072966 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.h
+--- firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.h.D225034.1750779491	2026-07-16 10:14:36.232298778 +0200
++++ firefox-140.13.0/dom/media/webrtc/RTCCertServiceParent.h	2026-07-16 10:14:36.232298778 +0200
 @@ -0,0 +1,42 @@
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=8 sts=2 et sw=2 tw=80: */
@@ -1996,9 +2013,9 @@ diff -up firefox-140.0/dom/media/webrtc/RTCCertServiceParent.h.D225034.175077949
 +}  // namespace mozilla::dom
 +
 +#endif  // mozilla_dom_CertServiceTransactionParent_h
-diff -up firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp.D225034.1750779491 firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp
---- firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp	2025-06-26 12:14:42.307331702 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.cpp.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.cpp
+--- firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.cpp.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.cpp	2026-07-16 10:14:36.232427840 +0200
 @@ -17,136 +17,19 @@
  #include "sslerr.h"
  
@@ -2179,9 +2196,9 @@ diff -up firefox-140.0/dom/media/webrtc/transport/dtlsidentity.cpp.D225034.17507
 +}
 +
  }  // namespace mozilla
-diff -up firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h.D225034.1750779491 firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h
---- firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h.D225034.1750779491	2025-06-17 18:15:13.000000000 +0200
-+++ firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h	2025-06-26 12:14:42.307559680 +0200
+diff -up firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.h.D225034.1750779491 firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.h
+--- firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.h.D225034.1750779491	2026-07-15 22:30:29.000000000 +0200
++++ firefox-140.13.0/dom/media/webrtc/transport/dtlsidentity.h	2026-07-16 10:14:36.232546964 +0200
 @@ -10,6 +10,7 @@
  #include <vector>
  
@@ -2237,9 +2254,9 @@ diff -up firefox-140.0/dom/media/webrtc/transport/dtlsidentity.h.D225034.1750779
    UniqueSECKEYPrivateKey private_key_;
    UniqueCERTCertificate cert_;
    SSLKEAType auth_type_;
-diff -up firefox-140.0/ipc/glue/BackgroundParentImpl.cpp.D225034.1750779491 firefox-140.0/ipc/glue/BackgroundParentImpl.cpp
---- firefox-140.0/ipc/glue/BackgroundParentImpl.cpp.D225034.1750779491	2025-06-17 18:15:14.000000000 +0200
-+++ firefox-140.0/ipc/glue/BackgroundParentImpl.cpp	2025-06-26 12:14:42.307823345 +0200
+diff -up firefox-140.13.0/ipc/glue/BackgroundParentImpl.cpp.D225034.1750779491 firefox-140.13.0/ipc/glue/BackgroundParentImpl.cpp
+--- firefox-140.13.0/ipc/glue/BackgroundParentImpl.cpp.D225034.1750779491	2026-07-15 22:30:31.000000000 +0200
++++ firefox-140.13.0/ipc/glue/BackgroundParentImpl.cpp	2026-07-16 10:14:36.232694843 +0200
 @@ -59,6 +59,7 @@
  #include "mozilla/dom/quota/QuotaParent.h"
  #include "mozilla/dom/simpledb/ActorsParent.h"
@@ -2248,9 +2265,9 @@ diff -up firefox-140.0/ipc/glue/BackgroundParentImpl.cpp.D225034.1750779491 fire
  #include "mozilla/ipc/BackgroundParent.h"
  #include "mozilla/ipc/BackgroundUtils.h"
  #include "mozilla/ipc/Endpoint.h"
-diff -up firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.D225034.1750779491 firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp
---- firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.D225034.1750779491	2025-06-17 18:15:19.000000000 +0200
-+++ firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp	2025-06-26 12:14:42.308182079 +0200
+diff -up firefox-140.13.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.D225034.1750779491 firefox-140.13.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp
+--- firefox-140.13.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.D225034.1750779491	2026-07-15 22:30:36.000000000 +0200
++++ firefox-140.13.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp	2026-07-16 10:14:36.232913564 +0200
 @@ -200,13 +200,15 @@ class LoopbackTransport : public MediaTr
                           // this up internally
                           const nsTArray<NrIceStunAddr>& aStunAddrs) override {}
@@ -2274,9 +2291,9 @@ diff -up firefox-140.0/media/webrtc/signaling/gtest/mediapipeline_unittest.cpp.D
  
    void RemoveTransportsExcept(
        const std::set<std::string>& aTransportIds) override {}
-diff -up firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl.D225034.1750779491 firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl
---- firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl.D225034.1750779491	2025-06-17 18:15:20.000000000 +0200
-+++ firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl	2025-06-26 12:14:42.308456975 +0200
+diff -up firefox-140.13.0/netwerk/ipc/PSocketProcessBridge.ipdl.D225034.1750779491 firefox-140.13.0/netwerk/ipc/PSocketProcessBridge.ipdl
+--- firefox-140.13.0/netwerk/ipc/PSocketProcessBridge.ipdl.D225034.1750779491	2026-07-15 22:30:36.000000000 +0200
++++ firefox-140.13.0/netwerk/ipc/PSocketProcessBridge.ipdl	2026-07-16 10:14:36.233055681 +0200
 @@ -10,6 +10,8 @@ include protocol PBackgroundDataBridge;
  include protocol PMediaTransport;
  #endif // MOZ_WEBRTC
@@ -2294,9 +2311,9 @@ diff -up firefox-140.0/netwerk/ipc/PSocketProcessBridge.ipdl.D225034.1750779491 
  };
  
  }
-diff -up firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp.D225034.1750779491 firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp
---- firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp.D225034.1750779491	2025-06-17 18:15:20.000000000 +0200
-+++ firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp	2025-06-26 12:14:42.308665677 +0200
+diff -up firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.cpp.D225034.1750779491 firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.cpp
+--- firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.cpp.D225034.1750779491	2026-07-15 22:30:37.000000000 +0200
++++ firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.cpp	2026-07-16 10:14:36.233162231 +0200
 @@ -9,6 +9,7 @@
  #ifdef MOZ_WEBRTC
  #  include "mozilla/dom/MediaTransportParent.h"
@@ -2343,9 +2360,9 @@ diff -up firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.cpp.D225034.1750779
  void SocketProcessBridgeParent::ActorDestroy(ActorDestroyReason aReason) {
    // See bug 1846478. We might be able to remove this dispatch.
    GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
-diff -up firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h.D225034.1750779491 firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h
---- firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h.D225034.1750779491	2025-06-17 18:15:20.000000000 +0200
-+++ firefox-140.0/netwerk/ipc/SocketProcessBridgeParent.h	2025-06-26 12:14:42.308878987 +0200
+diff -up firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.h.D225034.1750779491 firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.h
+--- firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.h.D225034.1750779491	2026-07-15 22:30:36.000000000 +0200
++++ firefox-140.13.0/netwerk/ipc/SocketProcessBridgeParent.h	2026-07-16 10:14:36.233268611 +0200
 @@ -29,6 +29,9 @@ class SocketProcessBridgeParent final :
        Endpoint<PMediaTransportParent>&& aEndpoint);
  #endif
