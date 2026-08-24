@@ -199,7 +199,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.13.0
+Version:              140.14.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -230,7 +230,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260716.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260812.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -286,7 +286,7 @@ Patch51:              mozilla-bmo1170092.patch
 Patch52:              exceptionHandled-for-IO-error-processhandler.patch
 Patch53:              D245908.clear-lang-bundles.diff
 Patch54:              D249071.restoreWinState.diff
-# Removed Crash Annotation GraphicsCriticalError 
+# Removed Crash Annotation GraphicsCriticalError
 Patch55:              D266159.1760530435.diff
 
 # -- Submitted upstream, not merged --
@@ -2170,9 +2170,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Wed Jul 29 2026 Release Engineering <releng@openela.org> - 140.13.0
+* Mon Aug 24 2026 Release Engineering <releng@openela.org> - 140.14.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Wed Aug 12 2026 Jan Grulich <jgrulich@redhat.com> - 140.14.0-1
+- Update to 140.14.0 ESR
 
 * Thu Jul 16 2026 Jan Horak <jhorak@redhat.com> - 140.13.0-1
 - Update to 140.13.0 ESR
