@@ -121,7 +121,11 @@ end}
 %global nspr_version_max  4.37
 %global nss_version       3.112
 %global nss_version_max   3.113
-%if 0%{?rhel} >= 10 && 0%{?rhel_minor_version} > 2
+%if 0%{?rhel} == 10 && 0%{?rhel_minor_version} >= 2
+%global nss_version_max   3.125
+%global nspr_version_max  4.40
+%endif
+%if 0%{?rhel} == 9 && 0%{?rhel_minor_version} >= 8
 %global nss_version_max   3.125
 %global nspr_version_max  4.40
 %endif
@@ -199,7 +203,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.14.0
+Version:              140.15.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -230,7 +234,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260812.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20260908.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -280,6 +284,7 @@ Patch13:              firefox-fix-build-with-system-pipewire.patch
 Patch14:              build-system-nss.patch
 Patch15:              build-workaround-s390x.patch
 Patch17:              build-bindgen-0.72.1.patch
+Patch18:              gb18030-detect.patch
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
@@ -1338,7 +1343,12 @@ echo "--------------------------------------------"
 %endif
 
 %if %{?system_nss}
+%if (0%{?rhel} == 10 && %{rhel_minor_version} < 2)
 %patch -P14 -p1 -b .system-nss
+%endif
+%if (0%{?rhel} == 9 && %{rhel_minor_version} < 8)
+%patch -P14 -p1 -b .system-nss
+%endif
 %endif
 
 %ifarch s390x
@@ -1350,6 +1360,7 @@ echo "--------------------------------------------"
 %if (0%{?rhel} == 9 && %{rhel_minor_version} > 8)
 %patch -P17 -p1 -b .build-bindgen-0.72.1
 %endif
+%patch -P18 -p1 -b .gb18030-detect
 
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
 %if %{with_wasi_sdk}
@@ -1385,12 +1396,12 @@ export LIBCLANG_RT=`pwd`/wasi-sdk-20/build/compiler-rt/lib/wasi/libclang_rt.buil
 %patch -P120 -p1 -b .integrate-ml-dsa-signature-verification-for-pkix-certificate-chain-validation
 %patch -P121 -p1 -b .add-ml-dsa-certificate-support-to-certviewer
 %patch -P122 -p1 -b .enable-ml-dsa-signature-verification-for-certificate-chain-validation
-%if 0%{?rhel_minor_version} <= 2
+%if 0%{?rhel_minor_version} < 2
 %patch -P123 -p1 -b .adapt-ml-dsa-support-to-rhel-nss
 %endif
 %patch -P124 -p1 -b .enable-ml-dsa-in-manager-ssl
 
-%if 0%{?rhel_minor_version} <= 2
+%if 0%{?rhel_minor_version} < 2
 %patch -P125 -p1 -b .add-mlkem768-secp256r1-support
 %else
 %patch -P126 -p1 -b .add-mlkem768-secp256r1-support-nss-3.124
@@ -2170,9 +2181,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Aug 24 2026 Release Engineering <releng@openela.org> - 140.14.0
+* Mon Sep 14 2026 Release Engineering <releng@openela.org> - 140.15.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Tue Sep  8 2026 Jan Horak <jhorak@redhat.com> - 140.15.0-1
+- Update to 140.15.0 ESR
 
 * Wed Aug 12 2026 Jan Grulich <jgrulich@redhat.com> - 140.14.0-1
 - Update to 140.14.0 ESR
