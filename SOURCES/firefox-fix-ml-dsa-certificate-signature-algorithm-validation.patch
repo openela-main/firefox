@@ -1,0 +1,183 @@
+From 6c406aad40148418f1ea43a2e42e94fe63dbb833 Mon Sep 17 00:00:00 2001
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Mon, 7 Sep 2026 16:08:40 +0200
+Subject: Fix ML-DSA certificate signature algorithm validation
+
+Pure ML-DSA signatures have no digest algorithm. Represent the digest as
+absent instead of leaving it uninitialized, so matching certificate
+signature algorithm identifiers do not incorrectly fail with
+ERROR_SIGNATURE_ALGORITHM_MISMATCH.
+
+Reject ML-DSA signature algorithm parameters and preserve the ML-DSA
+parameter set when comparing the inner and outer identifiers.
+
+diff --git a/security/nss/lib/mozpkix/include/pkix/pkixder.h b/security/nss/lib/mozpkix/include/pkix/pkixder.h
+index 40eb5027af..1e18e5e6ab 100644
+--- a/security/nss/lib/mozpkix/include/pkix/pkixder.h
++++ b/security/nss/lib/mozpkix/include/pkix/pkixder.h
+@@ -25,6 +25,8 @@
+ #ifndef mozilla_pkix_pkixder_h
+ #define mozilla_pkix_pkixder_h
+ 
++#include <optional>
++
+ // Expect* functions advance the input mark and return Success if the input
+ // matches the given criteria; they fail with the input mark in an undefined
+ // state if the input does not match the criteria.
+@@ -488,12 +490,20 @@ inline Result OptionalExtensions(Reader& input, uint8_t tag,
+ Result DigestAlgorithmIdentifier(Reader& input,
+                                  /*out*/ DigestAlgorithm& algorithm);
+ 
+-enum class PublicKeyAlgorithm { RSA_PKCS1, RSA_PSS, ECDSA, MLDSA };
++enum class PublicKeyAlgorithm {
++  RSA_PKCS1,
++  RSA_PSS,
++  ECDSA,
++  MLDSA,
++  MLDSA_44,
++  MLDSA_65,
++  MLDSA_87,
++};
+ 
+ Result SignatureAlgorithmIdentifierValue(
+     Reader& input,
+     /*out*/ PublicKeyAlgorithm& publicKeyAlgorithm,
+-    /*out*/ DigestAlgorithm& digestAlgorithm);
++    /*out*/ std::optional<DigestAlgorithm>& digestAlgorithm);
+ 
+ struct SignedDataWithSignature final {
+  public:
+diff --git a/security/nss/lib/mozpkix/lib/pkixcheck.cpp b/security/nss/lib/mozpkix/lib/pkixcheck.cpp
+index ff818cada8..81e517e307 100644
+--- a/security/nss/lib/mozpkix/lib/pkixcheck.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixcheck.cpp
+@@ -41,7 +41,7 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
+ {
+   // 4.1.1.2. signatureAlgorithm
+   der::PublicKeyAlgorithm publicKeyAlg;
+-  DigestAlgorithm digestAlg;
++  std::optional<DigestAlgorithm> digestAlg;
+   Reader signatureAlgorithmReader(signedData.algorithm);
+   Result rv = der::SignatureAlgorithmIdentifierValue(signatureAlgorithmReader,
+                                                      publicKeyAlg, digestAlg);
+@@ -55,7 +55,7 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
+ 
+   // 4.1.2.3. Signature
+   der::PublicKeyAlgorithm signedPublicKeyAlg;
+-  DigestAlgorithm signedDigestAlg;
++  std::optional<DigestAlgorithm> signedDigestAlg;
+   Reader signedSignatureAlgorithmReader(signatureValue);
+   rv = der::SignatureAlgorithmIdentifierValue(signedSignatureAlgorithmReader,
+                                               signedPublicKeyAlg,
+@@ -92,10 +92,12 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
+   // more generally it short-circuits any path building with them (which, of
+   // course, is even slower).
+ 
+-  rv = trustDomain.CheckSignatureDigestAlgorithm(digestAlg, endEntityOrCA,
+-                                                 notBefore);
+-  if (rv != Success) {
+-    return rv;
++  if (digestAlg) {
++    rv = trustDomain.CheckSignatureDigestAlgorithm(digestAlg.value(),
++                                                   endEntityOrCA, notBefore);
++    if (rv != Success) {
++      return rv;
++    }
+   }
+ 
+   switch (publicKeyAlg) {
+@@ -119,7 +121,9 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
+       // during path building is too low to be worth bothering with.
+       break;
+ 
+-    case der::PublicKeyAlgorithm::MLDSA:
++    case der::PublicKeyAlgorithm::MLDSA_44:
++    case der::PublicKeyAlgorithm::MLDSA_65:
++    case der::PublicKeyAlgorithm::MLDSA_87:
+       break;
+     MOZILLA_PKIX_UNREACHABLE_DEFAULT_ENUM
+   }
+diff --git a/security/nss/lib/mozpkix/lib/pkixder.cpp b/security/nss/lib/mozpkix/lib/pkixder.cpp
+index 4ff45ed566..3c39582399 100644
+--- a/security/nss/lib/mozpkix/lib/pkixder.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixder.cpp
+@@ -86,8 +86,11 @@ ReadTagAndGetValue(Reader& input, /*out*/ uint8_t& tag, /*out*/ Input& value)
+ Result
+ SignatureAlgorithmIdentifierValue(Reader& input,
+                                  /*out*/ PublicKeyAlgorithm& publicKeyAlgorithm,
+-                                 /*out*/ DigestAlgorithm& digestAlgorithm)
++                                 /*out*/ std::optional<DigestAlgorithm>&
++                                     digestAlgorithm)
+ {
++  digestAlgorithm.reset();
++
+   // RFC 5758 Section 3.2 (ECDSA with SHA-2), and RFC 3279 Section 2.2.3
+   // (ECDSA with SHA-1) say that parameters must be omitted.
+   //
+@@ -270,10 +273,15 @@ SignatureAlgorithmIdentifierValue(Reader& input,
+     } else {
+       return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+     }
+-  } else if (algorithmID.MatchRest(id_ml_dsa_44) ||
+-             algorithmID.MatchRest(id_ml_dsa_65) ||
+-             algorithmID.MatchRest(id_ml_dsa_87)) {
+-    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA;
++  } else if (algorithmID.MatchRest(id_ml_dsa_44)) {
++    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA_44;
++    return End(algorithmParams);
++  } else if (algorithmID.MatchRest(id_ml_dsa_65)) {
++    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA_65;
++    return End(algorithmParams);
++  } else if (algorithmID.MatchRest(id_ml_dsa_87)) {
++    publicKeyAlgorithm = PublicKeyAlgorithm::MLDSA_87;
++    return End(algorithmParams);
+   } else {
+     return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+   }
+diff --git a/security/nss/lib/mozpkix/lib/pkixverify.cpp b/security/nss/lib/mozpkix/lib/pkixverify.cpp
+index ff132d89df..90c60e517b 100644
+--- a/security/nss/lib/mozpkix/lib/pkixverify.cpp
++++ b/security/nss/lib/mozpkix/lib/pkixverify.cpp
+@@ -32,7 +32,7 @@ VerifySignedData(TrustDomain& trustDomain,
+                  Input signerSubjectPublicKeyInfo)
+ {
+   der::PublicKeyAlgorithm publicKeyAlg;
+-  DigestAlgorithm digestAlgorithm;
++  std::optional<DigestAlgorithm> digestAlgorithm;
+   Reader signatureAlg(signedData.algorithm);
+   Result rv = der::SignatureAlgorithmIdentifierValue(
+                 signatureAlg, publicKeyAlg, digestAlgorithm);
+@@ -45,15 +45,29 @@ VerifySignedData(TrustDomain& trustDomain,
+ 
+   switch (publicKeyAlg) {
+     case der::PublicKeyAlgorithm::ECDSA:
++      if (!digestAlgorithm) {
++        return Result::FATAL_ERROR_LIBRARY_FAILURE;
++      }
+       return trustDomain.VerifyECDSASignedData(signedData.data,
+-          digestAlgorithm, signedData.signature, signerSubjectPublicKeyInfo);
++          digestAlgorithm.value(), signedData.signature,
++          signerSubjectPublicKeyInfo);
+     case der::PublicKeyAlgorithm::RSA_PKCS1:
++      if (!digestAlgorithm) {
++        return Result::FATAL_ERROR_LIBRARY_FAILURE;
++      }
+       return trustDomain.VerifyRSAPKCS1SignedData(signedData.data,
+-          digestAlgorithm, signedData.signature, signerSubjectPublicKeyInfo);
++          digestAlgorithm.value(), signedData.signature,
++          signerSubjectPublicKeyInfo);
+     case der::PublicKeyAlgorithm::RSA_PSS:
++      if (!digestAlgorithm) {
++        return Result::FATAL_ERROR_LIBRARY_FAILURE;
++      }
+       return trustDomain.VerifyRSAPSSSignedData(signedData.data,
+-          digestAlgorithm, signedData.signature, signerSubjectPublicKeyInfo);
+-    case der::PublicKeyAlgorithm::MLDSA:
++          digestAlgorithm.value(), signedData.signature,
++          signerSubjectPublicKeyInfo);
++    case der::PublicKeyAlgorithm::MLDSA_44:
++    case der::PublicKeyAlgorithm::MLDSA_65:
++    case der::PublicKeyAlgorithm::MLDSA_87:
+       return trustDomain.VerifyMLDSASignedData(signedData.data,
+           signedData.signature, signerSubjectPublicKeyInfo);
+     MOZILLA_PKIX_UNREACHABLE_DEFAULT_ENUM
