@@ -1,0 +1,115 @@
+diff --git a/build/moz.configure/rust.configure b/build/moz.configure/rust.configure
+--- a/build/moz.configure/rust.configure
++++ b/build/moz.configure/rust.configure
+@@ -300,10 +300,14 @@
+         if len(candidates) == 1:
+             return candidates[0].rust_target
+         elif not candidates:
+             return None
+ 
++        # config.guess uses the "pc" vendor for x86/x86_64 where rust uses its
++        # generic "unknown" vendor; normalize so we correlate on the right one.
++        vendor = "unknown" if host_or_target.vendor == "pc" else host_or_target.vendor
++
+         # We have multiple candidates. There are two cases where we can try to
+         # narrow further down using extra information from the build system.
+         # - For windows targets, correlate with the C compiler type
+         if host_or_target.kernel == "WINNT":
+             if host_or_target.abi:
+@@ -367,15 +371,23 @@
+             if arm_target.float_abi == "hard" and host_or_target.os != "FreeBSD":
+                 suffix = "hf"
+             else:
+                 suffix = ""
+             for p in prefixes:
+-                for c in candidates:
+-                    if c.rust_target.startswith(
+-                        "{}-".format(p)
+-                    ) and c.rust_target.endswith(suffix):
++                matches = [
++                    c
++                    for c in candidates
++                    if c.rust_target.startswith("{}-".format(p))
++                    and c.rust_target.endswith(suffix)
++                ]
++                if not matches:
++                    continue
++                # As below, correlate on the (normalized) vendor.
++                for c in matches:
++                    if c.target.vendor == vendor:
+                         return c.rust_target
++                return matches[0].rust_target
+ 
+         # See if we can narrow down on the exact alias.
+         # We use the sub_configure_alias to keep support mingw32 triplets as input.
+         narrowed = [
+             c
+@@ -400,10 +412,19 @@
+             if len(narrowed) == 1:
+                 return narrowed[0].rust_target
+             elif narrowed:
+                 candidates = narrowed
+ 
++        # Correlate on the (normalized) vendor, so vendor-specific targets (e.g.
++        # the *-oe-linux-gnu targets added in rust 1.98) don't shadow the
++        # generic ones for aliases whose vendor doesn't match a rust target.
++        narrowed = [c for c in candidates if c.target.vendor == vendor]
++        if len(narrowed) == 1:
++            return narrowed[0].rust_target
++        elif narrowed:
++            candidates = narrowed
++
+         # See if we can narrow down with the raw OS and raw CPU
+         narrowed = [
+             c
+             for c in candidates
+             if c.target.raw_os == host_or_target.raw_os
+diff --git a/python/mozbuild/mozbuild/test/configure/test_toolchain_configure.py b/python/mozbuild/mozbuild/test/configure/test_toolchain_configure.py
+--- a/python/mozbuild/mozbuild/test/configure/test_toolchain_configure.py
++++ b/python/mozbuild/mozbuild/test/configure/test_toolchain_configure.py
+@@ -1991,10 +1991,19 @@
+             if Version(version) >= "1.84.0":
+                 rust_targets += [
+                     "wasm32v1-none",
+                 ]
+                 rust_targets.remove("wasm32-wasi")
++            # Additional targets from 1.98
++            if Version(version) >= "1.98.0":
++                rust_targets += [
++                    "aarch64-oe-linux-gnu",
++                    "armv7-oe-linux-gnueabihf",
++                    "i686-oe-linux-gnu",
++                    "riscv64-oe-linux-gnu",
++                    "x86_64-oe-linux-gnu",
++                ]
+ 
+             return 0, "\n".join(sorted(rust_targets)), ""
+         if (
+             len(args) == 6
+             and args[:2] == ("--crate-type", "staticlib")
+@@ -2087,10 +2096,11 @@
+             ("i686-unknown-linux-android21", "i686-linux-android"),
+             ("i686-pc-linux-gnu", "i686-unknown-linux-gnu"),
+             ("x86_64-unknown-linux-android", "x86_64-linux-android"),
+             ("x86_64-unknown-linux-android21", "x86_64-linux-android"),
+             ("x86_64-pc-linux-gnu", "x86_64-unknown-linux-gnu"),
++            ("riscv64-unknown-linux-gnu", "riscv64gc-unknown-linux-gnu"),
+             ("sparcv9-sun-solaris2", "sparcv9-sun-solaris"),
+             (
+                 "x86_64-sun-solaris2",
+                 (
+                     "x86_64-sun-solaris"
+@@ -2239,7 +2249,12 @@
+ 
+     def test_rust_wasi_target(self):
+         self.assertEqual(self.get_rust_target("wasm32-unknown-wasi"), "wasm32-wasip1")
+ 
+ 
++# Exercises the vendor-specific *-oe-linux-* targets added in rust 1.98.
++class Rust198Test(Rust184Test):
++    VERSION = "1.98.0"
++
++
+ if __name__ == "__main__":
+     main()
+
