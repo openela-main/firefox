@@ -203,7 +203,7 @@ end}
 
 Summary:              Mozilla Firefox Web browser
 Name:                 firefox
-Version:              140.16.0
+Version:              140.17.0
 Release:              1%{?dist}
 URL:                  https://www.mozilla.org/firefox/
 License:              MPLv1.1 or GPLv2+ or LGPLv2+
@@ -234,7 +234,7 @@ ExcludeArch:          aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:              firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:              firefox-langpacks-%{version}%{?pre_version}-20260918.tar.xz
+Source1:              firefox-langpacks-%{version}%{?pre_version}-20261001.tar.xz
 %endif
 Source2:              cbindgen-vendor.tar.xz
 Source3:              process-official-tarball
@@ -285,7 +285,6 @@ Patch14:              build-system-nss.patch
 Patch15:              build-workaround-s390x.patch
 Patch17:              build-bindgen-0.72.1.patch
 Patch18:              gb18030-detect.patch
-Patch19:              D311145-rust-target.diff
 
 # -- Upstreamed patches --
 Patch51:              mozilla-bmo1170092.patch
@@ -1365,7 +1364,6 @@ echo "--------------------------------------------"
 %patch -P17 -p1 -b .build-bindgen-0.72.1
 %endif
 %patch -P18 -p1 -b .gb18030-detect
-%patch -P19 -p1 -b .D311145-rust-target
 
 # We need to create the wasi.patch with the correct path to the wasm libclang_rt.
 %if %{with_wasi_sdk}
@@ -2186,9 +2184,12 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Sep 21 2026 Release Engineering <releng@openela.org> - 140.16.0
+* Wed Oct 07 2026 Release Engineering <releng@openela.org> - 140.17.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
+
+* Thu Oct  1 2026 Jan Horak <jhorak@redhat.com> - 140.17.0-1
+- Update to 140.17.0 ESR
 
 * Fri Sep 18 2026 Jan Horak <jhorak@redhat.com> - 140.16.0-1
 - Update to 140.16.0 ESR
