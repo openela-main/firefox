@@ -1,12 +1,11 @@
-diff --git a/config/system-headers.mozbuild b/config/system-headers.mozbuild
-index 028002a1d0..9dcb50fe5e 100644
---- a/config/system-headers.mozbuild
-+++ b/config/system-headers.mozbuild
-@@ -310,6 +310,7 @@ system_headers = [
+diff -up firefox-153.0/config/system-headers.mozbuild.fix-build-with-system-pipewire firefox-153.0/config/system-headers.mozbuild
+--- firefox-153.0/config/system-headers.mozbuild.fix-build-with-system-pipewire	2026-07-01 15:07:35.000000000 +0200
++++ firefox-153.0/config/system-headers.mozbuild	2026-07-08 16:41:30.313376834 +0200
+@@ -306,6 +306,7 @@ system_headers = [
      "getopt.h",
      "gio/gdesktopappinfo.h",
      "gio/gio.h",
 +    "gio/gunixfdlist.h",
+     "gio/gunixinputstream.h",
      "glibconfig.h",
      "glib.h",
-     "glib-object.h",

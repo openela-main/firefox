@@ -1,14 +1,15 @@
-diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index acadd3a2cc..11b217174d 100644
---- a/modules/libpref/init/StaticPrefList.yaml
-+++ b/modules/libpref/init/StaticPrefList.yaml
-@@ -12561,6 +12561,8 @@
+diff -up firefox-153.0/modules/libpref/init/StaticPrefList.yaml.av1-else-condition-add firefox-153.0/modules/libpref/init/StaticPrefList.yaml
+--- firefox-153.0/modules/libpref/init/StaticPrefList.yaml.av1-else-condition-add	2026-07-01 15:07:44.000000000 +0200
++++ firefox-153.0/modules/libpref/init/StaticPrefList.yaml	2026-07-07 14:45:22.849529479 +0200
+@@ -13757,7 +13757,11 @@
+ 
+ - name: media.webrtc.codec.video.av1.enabled
    type: RelaxedAtomicBool
- #if defined(MOZ_AV1)
++#if defined(MOZ_AV1)
    value: true
 +#else
 +  value: false
- #endif
++#endif
    mirror: always
  
-
+ # If true, then AV1 will be used as the preferred codec for WebRTC video.

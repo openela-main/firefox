@@ -1,8 +1,8 @@
 diff --git a/netwerk/protocol/http/WebTransportCertificateVerifier.cpp b/netwerk/protocol/http/WebTransportCertificateVerifier.cpp
-index cc778640a1..298d6a61e8 100644
+index 07d4c57004..ec2448080d 100644
 --- a/netwerk/protocol/http/WebTransportCertificateVerifier.cpp
 +++ b/netwerk/protocol/http/WebTransportCertificateVerifier.cpp
-@@ -53,6 +53,10 @@ class ServerCertHashesTrustDomain : public mozilla::pkix::TrustDomain {
+@@ -52,6 +52,10 @@ class ServerCertHashesTrustDomain : public mozilla::pkix::TrustDomain {
        mozilla::pkix::Input signature,
        mozilla::pkix::Input subjectPublicKeyInfo) override;
  
@@ -13,7 +13,7 @@ index cc778640a1..298d6a61e8 100644
    virtual mozilla::pkix::Result DigestBuf(
        mozilla::pkix::Input item, mozilla::pkix::DigestAlgorithm digestAlg,
        /*out*/ uint8_t* digestBuf, size_t digestBufLen) override;
-@@ -151,6 +155,14 @@ mozilla::pkix::Result ServerCertHashesTrustDomain::VerifyECDSASignedData(
+@@ -145,6 +149,14 @@ mozilla::pkix::Result ServerCertHashesTrustDomain::VerifyECDSASignedData(
    return mozilla::pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
  }
  
@@ -29,10 +29,10 @@ index cc778640a1..298d6a61e8 100644
      mozilla::pkix::Input item, mozilla::pkix::DigestAlgorithm digestAlg,
      /*out*/ uint8_t* digestBuf, size_t digestBufLen) {
 diff --git a/security/certverifier/CertVerifier.cpp b/security/certverifier/CertVerifier.cpp
-index ca330770fb..1e8f1d4996 100644
+index 199505ed65..7e05936e5b 100644
 --- a/security/certverifier/CertVerifier.cpp
 +++ b/security/certverifier/CertVerifier.cpp
-@@ -7,6 +7,7 @@
+@@ -5,6 +5,7 @@
  #include "CertVerifier.h"
  
  #include <stdint.h>
@@ -118,10 +118,10 @@ index ca330770fb..1e8f1d4996 100644
      default:
        MOZ_ASSERT_UNREACHABLE("unhandled public key algorithm");
 diff --git a/security/certverifier/CertVerifier.h b/security/certverifier/CertVerifier.h
-index 6432547c8a..6e09e6fcdd 100644
+index 16247b423a..c41c0a9880 100644
 --- a/security/certverifier/CertVerifier.h
 +++ b/security/certverifier/CertVerifier.h
-@@ -331,7 +331,8 @@ mozilla::pkix::Result VerifySignedDataWithCache(
+@@ -324,7 +324,8 @@ mozilla::pkix::Result VerifySignedDataWithCache(
      mozilla::pkix::der::PublicKeyAlgorithm publicKeyAlg,
      mozilla::glean::impl::DenominatorMetric telemetryDenominator,
      mozilla::glean::impl::NumeratorMetric telemetryNumerator,
@@ -132,10 +132,10 @@ index 6432547c8a..6e09e6fcdd 100644
      SignatureCache* signatureCache, void* pinArg);
  
 diff --git a/security/certverifier/NSSCertDBTrustDomain.cpp b/security/certverifier/NSSCertDBTrustDomain.cpp
-index 70ba17d70f..a3ace3cee7 100644
+index 82bc1dca1b..6e2d272a09 100644
 --- a/security/certverifier/NSSCertDBTrustDomain.cpp
 +++ b/security/certverifier/NSSCertDBTrustDomain.cpp
-@@ -1541,6 +1541,15 @@ Result NSSCertDBTrustDomain::VerifyECDSASignedData(
+@@ -1473,6 +1473,15 @@ Result NSSCertDBTrustDomain::VerifyECDSASignedData(
        signature, subjectPublicKeyInfo, mSignatureCache, mPinArg);
  }
  
@@ -152,10 +152,10 @@ index 70ba17d70f..a3ace3cee7 100644
      Time notBefore, Time notAfter, EndEntityOrCA endEntityOrCA,
      KeyPurposeId keyPurpose) {
 diff --git a/security/certverifier/NSSCertDBTrustDomain.h b/security/certverifier/NSSCertDBTrustDomain.h
-index fc210f3254..6178201758 100644
+index 9dae495395..49e7ae5a68 100644
 --- a/security/certverifier/NSSCertDBTrustDomain.h
 +++ b/security/certverifier/NSSCertDBTrustDomain.h
-@@ -197,6 +197,10 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
+@@ -175,6 +175,10 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
        mozilla::pkix::Input signature,
        mozilla::pkix::Input subjectPublicKeyInfo) override;
  
@@ -167,10 +167,10 @@ index fc210f3254..6178201758 100644
                             mozilla::pkix::DigestAlgorithm digestAlg,
                             /*out*/ uint8_t* digestBuf,
 diff --git a/security/ct/CTLogVerifier.cpp b/security/ct/CTLogVerifier.cpp
-index d5e665aaca..471213745d 100644
+index 1bac31f6ea..9a68e92f1f 100644
 --- a/security/ct/CTLogVerifier.cpp
 +++ b/security/ct/CTLogVerifier.cpp
-@@ -99,6 +99,10 @@ class SignatureParamsTrustDomain final : public TrustDomain {
+@@ -96,6 +96,10 @@ class SignatureParamsTrustDomain final : public TrustDomain {
      return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
    }
  
@@ -182,10 +182,10 @@ index d5e665aaca..471213745d 100644
                                           KeyPurposeId) override {
      return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
 diff --git a/security/ct/tests/gtest/CTTestUtils.cpp b/security/ct/tests/gtest/CTTestUtils.cpp
-index 6a25307ec3..dbec7adc91 100644
+index 0df2d1e5f0..e679807c0a 100644
 --- a/security/ct/tests/gtest/CTTestUtils.cpp
 +++ b/security/ct/tests/gtest/CTTestUtils.cpp
-@@ -807,6 +807,12 @@ class OCSPExtensionTrustDomain : public TrustDomain {
+@@ -804,6 +804,12 @@ class OCSPExtensionTrustDomain : public TrustDomain {
                                       subjectPublicKeyInfo, nullptr);
    }
  
@@ -199,10 +199,10 @@ index 6a25307ec3..dbec7adc91 100644
                                           KeyPurposeId) override {
      ADD_FAILURE();
 diff --git a/security/manager/ssl/AppTrustDomain.cpp b/security/manager/ssl/AppTrustDomain.cpp
-index ab49d7eb1f..3963f90eb1 100644
+index 7c30bf9a07..4458311352 100644
 --- a/security/manager/ssl/AppTrustDomain.cpp
 +++ b/security/manager/ssl/AppTrustDomain.cpp
-@@ -322,6 +322,12 @@ pkix::Result AppTrustDomain::VerifyECDSASignedData(
+@@ -317,6 +317,12 @@ pkix::Result AppTrustDomain::VerifyECDSASignedData(
                                    subjectPublicKeyInfo, nullptr);
  }
  
@@ -216,10 +216,10 @@ index ab49d7eb1f..3963f90eb1 100644
      Time /*notBefore*/, Time /*notAfter*/, EndEntityOrCA /*endEntityOrCA*/,
      KeyPurposeId /*keyPurpose*/) {
 diff --git a/security/manager/ssl/AppTrustDomain.h b/security/manager/ssl/AppTrustDomain.h
-index 4b0212ede0..85fdff5f13 100644
+index 5d697213aa..84670d8d14 100644
 --- a/security/manager/ssl/AppTrustDomain.h
 +++ b/security/manager/ssl/AppTrustDomain.h
-@@ -80,6 +80,9 @@ class AppTrustDomain final : public mozilla::pkix::TrustDomain {
+@@ -74,6 +74,9 @@ class AppTrustDomain final : public mozilla::pkix::TrustDomain {
                             mozilla::pkix::DigestAlgorithm digestAlg,
                             /*out*/ uint8_t* digestBuf,
                             size_t digestBufLen) override;
@@ -230,10 +230,10 @@ index 4b0212ede0..85fdff5f13 100644
   private:
    nsTArray<Span<const uint8_t>> mTrustedRoots;
 diff --git a/security/manager/ssl/TLSClientAuthCertSelection.cpp b/security/manager/ssl/TLSClientAuthCertSelection.cpp
-index 3a84b15ee6..a3dc5a1af1 100644
+index 50bb10e941..e9bf1eebc4 100644
 --- a/security/manager/ssl/TLSClientAuthCertSelection.cpp
 +++ b/security/manager/ssl/TLSClientAuthCertSelection.cpp
-@@ -217,6 +217,11 @@ class ClientAuthCertNonverifyingTrustDomain final : public TrustDomain {
+@@ -225,6 +225,11 @@ class ClientAuthCertNonverifyingTrustDomain final : public TrustDomain {
        pkix::Input subjectPublicKeyInfo) override {
      return pkix::Success;
    }

@@ -1,28 +1,28 @@
-# HG changeset patch
-# User msirringhaus@suse.de
-# Date 1583738770 -3600
-#      Mon Mar 09 08:26:10 2020 +0100
-# Node ID 34676feac1a542e409e22acf5b98735f8313b1ce
-# Parent  506857dace0a08d1c9685e3ac264646590b3e27f
-[mq]: mozilla-bmo998749.patch
-
-diff -r 506857dace0a -r 34676feac1a5 gfx/2d/FilterProcessing.h
---- a/gfx/2d/FilterProcessing.h	Fri Feb 28 12:31:51 2020 +0100
-+++ b/gfx/2d/FilterProcessing.h	Mon Mar 09 08:26:10 2020 +0100
-@@ -13,10 +13,17 @@
- namespace mozilla {
- namespace gfx {
+diff -up firefox-153.0/gfx/2d/FilterProcessing.h.mozilla-bmo998749 firefox-153.0/gfx/2d/FilterProcessing.h
+--- firefox-153.0/gfx/2d/FilterProcessing.h.mozilla-bmo998749	2026-07-16 18:13:40.000000000 +0200
++++ firefox-153.0/gfx/2d/FilterProcessing.h	2026-08-17 19:56:11.176279210 +0200
+@@ -9,7 +9,16 @@
+ #include "Filters.h"
  
-+#if MOZ_BIG_ENDIAN()
-+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_B = 3;
-+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_G = 2;
-+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_R = 1;
-+const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_A = 0;
+ namespace mozilla::gfx {
+-
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__)
++const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_B =
++    static_cast<ptrdiff_t>(mozilla::gfx::SurfaceFormatBit::OS_A) / 8;
++const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_G =
++    static_cast<ptrdiff_t>(mozilla::gfx::SurfaceFormatBit::OS_R) / 8;
++const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_R =
++    static_cast<ptrdiff_t>(mozilla::gfx::SurfaceFormatBit::OS_G) / 8;
++const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_A =
++    static_cast<ptrdiff_t>(mozilla::gfx::SurfaceFormatBit::OS_B) / 8;
 +#else
- const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_B = 0;
- const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_G = 1;
- const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_R = 2;
- const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_A = 3;
+ const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_B =
+     static_cast<ptrdiff_t>(mozilla::gfx::SurfaceFormatBit::OS_B) / 8;
+ const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_G =
+@@ -18,6 +27,7 @@ const ptrdiff_t B8G8R8A8_COMPONENT_BYTEO
+     static_cast<ptrdiff_t>(mozilla::gfx::SurfaceFormatBit::OS_R) / 8;
+ const ptrdiff_t B8G8R8A8_COMPONENT_BYTEOFFSET_A =
+     static_cast<ptrdiff_t>(mozilla::gfx::SurfaceFormatBit::OS_A) / 8;
 +#endif
  
  class FilterProcessing {
