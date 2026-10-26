@@ -1,7 +1,7 @@
-diff -up firefox-128.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1 firefox-128.0/gfx/2d/DrawTargetSkia.cpp
---- firefox-128.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1	2024-06-12 15:02:55.000000000 +0200
-+++ firefox-128.0/gfx/2d/DrawTargetSkia.cpp	2024-06-13 11:36:54.550728034 +0200
-@@ -156,8 +156,8 @@ static IntRect CalculateSurfaceBounds(co
+diff -up firefox-153.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1 firefox-153.0/gfx/2d/DrawTargetSkia.cpp
+--- firefox-153.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1	2026-07-01 15:07:39.000000000 +0200
++++ firefox-153.0/gfx/2d/DrawTargetSkia.cpp	2026-07-07 12:32:16.533613962 +0200
+@@ -175,8 +175,8 @@ static IntRect CalculateSurfaceBounds(co
  }
  
  static const int kARGBAlphaOffset =
@@ -12,34 +12,27 @@ diff -up firefox-128.0/gfx/2d/DrawTargetSkia.cpp.mozilla-bmo1504834-part1 firefo
  static bool VerifyRGBXFormat(uint8_t* aData, const IntSize& aSize,
                               const int32_t aStride, SurfaceFormat aFormat) {
    if (aFormat != SurfaceFormat::B8G8R8X8 || aSize.IsEmpty()) {
-diff -up firefox-128.0/gfx/2d/Types.h.mozilla-bmo1504834-part1 firefox-128.0/gfx/2d/Types.h
---- firefox-128.0/gfx/2d/Types.h.mozilla-bmo1504834-part1	2024-06-12 15:02:56.000000000 +0200
-+++ firefox-128.0/gfx/2d/Types.h	2024-06-13 11:36:54.551728036 +0200
-@@ -89,18 +89,11 @@ enum class SurfaceFormat : int8_t {
-   // This represents the unknown format.
-   UNKNOWN,  // TODO: Replace uses with Maybe<SurfaceFormat>.
- 
--// The following values are endian-independent synonyms. The _UINT32 suffix
--// indicates that the name reflects the layout when viewed as a uint32_t
--// value.
--#if MOZ_LITTLE_ENDIAN()
-+  // The following values are endian-independent synonyms. The _UINT32 suffix
-+  // indicates that the name reflects the layout when viewed as a uint32_t
-+  // value.
-   A8R8G8B8_UINT32 = B8G8R8A8,  // 0xAARRGGBB
-   X8R8G8B8_UINT32 = B8G8R8X8,  // 0x00RRGGBB
--#elif MOZ_BIG_ENDIAN()
--  A8R8G8B8_UINT32 = A8R8G8B8,  // 0xAARRGGBB
--  X8R8G8B8_UINT32 = X8R8G8B8,  // 0x00RRGGBB
--#else
--#  error "bad endianness"
--#endif
+diff -up firefox-153.0/gfx/2d/Types.h.mozilla-bmo1504834-part1 firefox-153.0/gfx/2d/Types.h
+--- firefox-153.0/gfx/2d/Types.h.mozilla-bmo1504834-part1	2026-07-01 15:07:39.000000000 +0200
++++ firefox-153.0/gfx/2d/Types.h	2026-07-07 12:33:58.543616701 +0200
+@@ -109,12 +109,8 @@ enum class SurfaceFormat : int8_t {
+   // The following values are endian-independent synonyms. The _UINT32 suffix
+   // indicates that the name reflects the layout when viewed as a uint32_t
+   // value.
+-  A8R8G8B8_UINT32 = std::endian::native == std::endian::little
+-                        ? B8G8R8A8
+-                        : A8R8G8B8,  // 0xAARRGGBB
+-  X8R8G8B8_UINT32 = std::endian::native == std::endian::little
+-                        ? B8G8R8X8
+-                        : X8R8G8B8,  // 0x00RRGGBB
++  A8R8G8B8_UINT32 = B8G8R8A8,  // 0xAARRGGBB
++  X8R8G8B8_UINT32 = B8G8R8X8,  // 0x00RRGGBB
  
    // The following values are OS and endian-independent synonyms.
    //
-diff -up firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1 firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc
---- firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1	2024-06-12 15:02:57.000000000 +0200
-+++ firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc	2024-06-13 11:38:45.377835856 +0200
+diff -up firefox-153.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1 firefox-153.0/gfx/skia/skia/modules/skcms/skcms.cc
+--- firefox-153.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-part1	2026-07-01 15:07:39.000000000 +0200
++++ firefox-153.0/gfx/skia/skia/modules/skcms/skcms.cc	2026-07-07 12:32:16.535419917 +0200
 @@ -31,6 +31,8 @@
          #include <avx512fintrin.h>
          #include <avx512dqintrin.h>
@@ -49,7 +42,7 @@ diff -up firefox-128.0/gfx/skia/skia/modules/skcms/skcms.cc.mozilla-bmo1504834-p
  #endif
  
  using namespace skcms_private;
-@@ -324,20 +326,28 @@ enum {
+@@ -379,20 +381,28 @@ enum {
  static uint16_t read_big_u16(const uint8_t* ptr) {
      uint16_t be;
      memcpy(&be, ptr, sizeof(be));

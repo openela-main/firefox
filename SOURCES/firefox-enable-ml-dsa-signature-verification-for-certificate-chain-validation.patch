@@ -1,3 +1,65 @@
+diff --git a/security/manager/ssl/PDFTrustDomain.cpp b/security/manager/ssl/PDFTrustDomain.cpp
+index 0f6ed32302..9ed8a9f939 100644
+--- a/security/manager/ssl/PDFTrustDomain.cpp
++++ b/security/manager/ssl/PDFTrustDomain.cpp
+@@ -195,6 +195,12 @@ pkix::Result PDFTrustDomain::VerifyECDSASignedData(
+                                   subjectPublicKeyInfo, nullptr);
+ }
+ 
++pkix::Result PDFTrustDomain::VerifyMLDSASignedData(Input data, Input signature,
++                                                    Input subjectPublicKeyInfo) {
++  return VerifyMLDSASignedDataNSS(data, signature, subjectPublicKeyInfo,
++                                  nullptr);
++}
++
+ pkix::Result PDFTrustDomain::CheckValidityIsAcceptable(
+     Time /*notBefore*/, Time /*notAfter*/, EndEntityOrCA /*endEntityOrCA*/,
+     KeyPurposeId /*keyPurpose*/) {
+diff --git a/security/manager/ssl/PDFTrustDomain.h b/security/manager/ssl/PDFTrustDomain.h
+index 4f29721950..cd89795dc3 100644
+--- a/security/manager/ssl/PDFTrustDomain.h
++++ b/security/manager/ssl/PDFTrustDomain.h
+@@ -59,6 +59,9 @@ class PDFTrustDomain final : public mozilla::pkix::TrustDomain {
+       mozilla::pkix::Input data, mozilla::pkix::DigestAlgorithm digestAlgorithm,
+       mozilla::pkix::Input signature,
+       mozilla::pkix::Input subjectPublicKeyInfo) override;
++  virtual Result VerifyMLDSASignedData(
++      mozilla::pkix::Input data, mozilla::pkix::Input signature,
++      mozilla::pkix::Input subjectPublicKeyInfo) override;
+   virtual Result CheckValidityIsAcceptable(
+       mozilla::pkix::Time notBefore, mozilla::pkix::Time notAfter,
+       mozilla::pkix::EndEntityOrCA endEntityOrCA,
+diff --git a/security/manager/ssl/QWACTrustDomain.cpp b/security/manager/ssl/QWACTrustDomain.cpp
+index 0b1b050856..218001f919 100644
+--- a/security/manager/ssl/QWACTrustDomain.cpp
++++ b/security/manager/ssl/QWACTrustDomain.cpp
+@@ -147,6 +147,12 @@ pkix::Result QWACTrustDomain::VerifyECDSASignedData(
+                                   subjectPublicKeyInfo, nullptr);
+ }
+ 
++pkix::Result QWACTrustDomain::VerifyMLDSASignedData(Input data, Input signature,
++                                                     Input subjectPublicKeyInfo) {
++  return VerifyMLDSASignedDataNSS(data, signature, subjectPublicKeyInfo,
++                                  nullptr);
++}
++
+ pkix::Result QWACTrustDomain::CheckValidityIsAcceptable(
+     Time /*notBefore*/, Time /*notAfter*/, EndEntityOrCA /*endEntityOrCA*/,
+     KeyPurposeId /*keyPurpose*/) {
+diff --git a/security/manager/ssl/QWACTrustDomain.h b/security/manager/ssl/QWACTrustDomain.h
+index 83283c4623..d1dc9682c0 100644
+--- a/security/manager/ssl/QWACTrustDomain.h
++++ b/security/manager/ssl/QWACTrustDomain.h
+@@ -57,6 +57,9 @@ class QWACTrustDomain final : public mozilla::pkix::TrustDomain {
+       mozilla::pkix::Input data, mozilla::pkix::DigestAlgorithm digestAlgorithm,
+       mozilla::pkix::Input signature,
+       mozilla::pkix::Input subjectPublicKeyInfo) override;
++  virtual Result VerifyMLDSASignedData(
++      mozilla::pkix::Input data, mozilla::pkix::Input signature,
++      mozilla::pkix::Input subjectPublicKeyInfo) override;
+   virtual Result CheckValidityIsAcceptable(
+       mozilla::pkix::Time notBefore, mozilla::pkix::Time notAfter,
+       mozilla::pkix::EndEntityOrCA endEntityOrCA,
 diff --git a/security/nss/lib/mozpkix/include/pkix/pkixder.h b/security/nss/lib/mozpkix/include/pkix/pkixder.h
 index ac1ec24393..40eb5027af 100644
 --- a/security/nss/lib/mozpkix/include/pkix/pkixder.h
@@ -30,10 +92,10 @@ index 6711959e71..b87e88a599 100644
  //
  // item contains the data to hash.
 diff --git a/security/nss/lib/mozpkix/include/pkix/pkixtypes.h b/security/nss/lib/mozpkix/include/pkix/pkixtypes.h
-index 6a07d6e885..f24bd546e4 100644
+index 9971c73720..de2bd01f36 100644
 --- a/security/nss/lib/mozpkix/include/pkix/pkixtypes.h
 +++ b/security/nss/lib/mozpkix/include/pkix/pkixtypes.h
-@@ -334,6 +334,10 @@ class TrustDomain {
+@@ -339,6 +339,10 @@ class TrustDomain {
                                         Input signature,
                                         Input subjectPublicKeyInfo) = 0;
  
@@ -45,10 +107,10 @@ index 6a07d6e885..f24bd546e4 100644
    //
    // Return Success if the validity duration is acceptable,
 diff --git a/security/nss/lib/mozpkix/lib/pkixc.cpp b/security/nss/lib/mozpkix/lib/pkixc.cpp
-index 5dea13c43e..f797a3b3a1 100644
+index 1ec192a542..5e63871794 100644
 --- a/security/nss/lib/mozpkix/lib/pkixc.cpp
 +++ b/security/nss/lib/mozpkix/lib/pkixc.cpp
-@@ -143,6 +143,15 @@ class CodeSigningTrustDomain final : public TrustDomain {
+@@ -142,6 +142,15 @@ class CodeSigningTrustDomain final : public TrustDomain {
          subjectPublicKeyInfo, nullptr);
    }
  
@@ -65,7 +127,7 @@ index 5dea13c43e..f797a3b3a1 100644
                                             EndEntityOrCA endEntityOrCA,
                                             KeyPurposeId keyPurpose) override {
 diff --git a/security/nss/lib/mozpkix/lib/pkixcheck.cpp b/security/nss/lib/mozpkix/lib/pkixcheck.cpp
-index 8b7e1bf73e..4ce73f3944 100644
+index 9ee9fc7080..ff818cada8 100644
 --- a/security/nss/lib/mozpkix/lib/pkixcheck.cpp
 +++ b/security/nss/lib/mozpkix/lib/pkixcheck.cpp
 @@ -118,6 +118,9 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,

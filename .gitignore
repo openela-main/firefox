@@ -1,7 +1,9 @@
-SOURCES/cbindgen-vendor.tar.xz
-SOURCES/firefox-140.17.0esr.processed-source.tar.xz
-SOURCES/firefox-langpacks-140.17.0esr-20261001.tar.xz
 SOURCES/mochitest-python.tar.gz
-SOURCES/nss-3.112.0-1.el9_4.src.rpm
 SOURCES/nss-3.112.0-4.el8_2.src.rpm
-SOURCES/wasi-sdk-20.tar.gz
+SOURCES/wasi-sdk-30.tar.gz
+SOURCES/cbindgen-vendor.tar.xz
+SOURCES/firefox-langpacks-153.5.0esr-20261009.tar.xz
+SOURCES/nss-3.112.0-1.el9_4.src.rpm
+SOURCES/wasm-component-ld-vendor.tar.xz
+SOURCES/wasm-tools-vendor.tar.xz
+SOURCES/firefox-153.5.0esr.processed-source.tar.xz
