@@ -16,7 +16,7 @@ pref("extensions.shownSelectionUI",         true);
 pref("ui.SpellCheckerUnderlineStyle",       1);
 pref("startup.homepage_override_url",       "%HOMEPAGE%");
 pref("startup.homepage_welcome_url",        "%HOMEPAGE%");
-pref("browser.startup.homepage",            "data:text/plain,browser.startup.homepage=file:///%PREFIX%/share/doc/HTML/index.html");
+pref("browser.startup.homepage",            "file:///%PREFIX%/share/doc/HTML/index.html");
 pref("media.gmp-gmpopenh264.autoupdate",true);
 pref("media.gmp-gmpopenh264.enabled",false);
 pref("media.gmp.decoder.enabled", true);
@@ -40,3 +40,5 @@ pref("storage.nfs_filesystem", true);
 pref("dom.private-attribution.submission.enabled", false);
 /* ECH is not supported in the system nss */
 pref("security.tls.ech.grease_probability", 0);
+/* Enable native messaging proxy for flatpaks */
+pref("widget.use-xdg-desktop-portal.native-messaging-proxy", 2);

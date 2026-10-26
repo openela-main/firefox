@@ -22,7 +22,7 @@ Index: firefox-102.0/gfx/webrender_bindings/RenderCompositorSWGL.cpp
    }
    mDT->Flush();
  
-+#if MOZ_BIG_ENDIAN()
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__)
 +  // One swizzle to rule them all.
 +  gfx::SwizzleData(mMappedData, mMappedStride, gfx::SurfaceFormat::B8G8R8A8,
 +                   mMappedData, mMappedStride, gfx::SurfaceFormat::A8R8G8B8,

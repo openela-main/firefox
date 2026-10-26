@@ -1,24 +1,15 @@
-changeset:   781221:573380ae60a7
-tag:         tip
-user:        stransky <stransky@redhat.com>
-date:        Mon Mar 24 10:13:50 2025 +0100
-files:       dom/cache/CacheStorage.cpp dom/indexedDB/ActorsParent.cpp
-description:
-FIPS-youtube
-
-
-diff --git a/dom/cache/CacheStorage.cpp b/dom/cache/CacheStorage.cpp
---- a/dom/cache/CacheStorage.cpp
-+++ b/dom/cache/CacheStorage.cpp
-@@ -38,6 +38,7 @@
+diff -up firefox-153.0/dom/cache/CacheStorage.cpp.rhbz-71999-fips-youtube firefox-153.0/dom/cache/CacheStorage.cpp
+--- firefox-153.0/dom/cache/CacheStorage.cpp.rhbz-71999-fips-youtube	2026-07-01 15:07:36.000000000 +0200
++++ firefox-153.0/dom/cache/CacheStorage.cpp	2026-07-03 15:59:38.917820929 +0200
+@@ -35,6 +35,7 @@
+ #include "nsIGlobalObject.h"
+ #include "nsMixedContentBlocker.h"
  #include "nsURLParsers.h"
- #include "js/Object.h"              // JS::GetClass
- #include "js/PropertyAndElement.h"  // JS_DefineProperty
 +#include "pk11pub.h"
  
  namespace mozilla::dom::cache {
  
-@@ -581,7 +582,7 @@ bool CacheStorage::HasStorageAccess(UseC
+@@ -580,7 +581,7 @@ bool CacheStorage::HasStorageAccess(UseC
      if (!principal->IsSystemPrincipal() &&
          principal->GetPrivateBrowsingId() !=
              nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID &&
@@ -27,10 +18,10 @@ diff --git a/dom/cache/CacheStorage.cpp b/dom/cache/CacheStorage.cpp
        return false;
      }
    }
-diff --git a/dom/indexedDB/ActorsParent.cpp b/dom/indexedDB/ActorsParent.cpp
---- a/dom/indexedDB/ActorsParent.cpp
-+++ b/dom/indexedDB/ActorsParent.cpp
-@@ -14791,7 +14791,8 @@ nsresult FactoryOp::Open() {
+diff -up firefox-153.0/dom/indexedDB/ActorsParent.cpp.rhbz-71999-fips-youtube firefox-153.0/dom/indexedDB/ActorsParent.cpp
+--- firefox-153.0/dom/indexedDB/ActorsParent.cpp.rhbz-71999-fips-youtube	2026-07-01 15:07:36.000000000 +0200
++++ firefox-153.0/dom/indexedDB/ActorsParent.cpp	2026-07-03 15:57:19.216082639 +0200
+@@ -15124,7 +15124,8 @@ nsresult FactoryOp::Open() {
      mEnforcingQuota = mPersistenceType != PERSISTENCE_TYPE_PERSISTENT;
  
      if (mOriginMetadata.mIsPrivate) {
@@ -40,4 +31,3 @@ diff --git a/dom/indexedDB/ActorsParent.cpp b/dom/indexedDB/ActorsParent.cpp
          // Explicitly disallow moz-extension urls from using the encrypted
          // indexedDB storage mode when the caller is an extension (see Bug
          // 1841806).
-

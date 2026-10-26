@@ -1,10 +1,10 @@
-diff -up firefox-84.0.2/security/certverifier/NSSCertDBTrustDomain.cpp.nss-hack firefox-84.0.2/security/certverifier/NSSCertDBTrustDomain.cpp
---- firefox-84.0.2/security/certverifier/NSSCertDBTrustDomain.cpp.nss-hack      2021-01-11 12:12:02.585514543 +0100
-+++ firefox-84.0.2/security/certverifier/NSSCertDBTrustDomain.cpp       2021-01-11 12:47:50.345984582 +0100
-@@ -1619,6 +1619,15 @@ SECStatus InitializeNSS(const nsACString
+diff -up firefox-153.0/security/certverifier/NSSCertDBTrustDomain.cpp.addons-nss-hack firefox-153.0/security/certverifier/NSSCertDBTrustDomain.cpp
+--- firefox-153.0/security/certverifier/NSSCertDBTrustDomain.cpp.addons-nss-hack	2026-07-07 13:26:38.134437967 +0200
++++ firefox-153.0/security/certverifier/NSSCertDBTrustDomain.cpp	2026-07-07 13:28:13.247484950 +0200
+@@ -1594,6 +1594,15 @@ SECStatus InitializeNSS(const nsACString
+   if (srv != SECSuccess) {
      return srv;
    }
-
 +  /* Sets the NSS_USE_ALG_IN_ANY_SIGNATURE bit.
 +   * does not change NSS_USE_ALG_IN_CERT_SIGNATURE,
 +   * so policy will still disable use of sha1 in
@@ -14,6 +14,6 @@ diff -up firefox-84.0.2/security/certverifier/NSSCertDBTrustDomain.cpp.nss-hack 
 +    NS_WARNING("Unable to use SHA1 for Add-ons, expect broken/disabled Add-ons. See https://bugzilla.redhat.com/show_bug.cgi?id=1908018 for details.");
 +  }
 +
-   if (nssDbConfig == NSSDBConfig::ReadWrite) {
-     UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-     if (!slot) {
+ 
+   // If the key DB doesn't have a password set, PK11_NeedUserInit will return
+   // true. For the SQL DB, we need to set a password or we won't be able to

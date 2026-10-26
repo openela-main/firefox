@@ -1,15 +1,15 @@
-diff -up firefox-140.10.1/third_party/rust/chardetng/.cargo-checksum.json.gb18030-detect firefox-140.10.1/third_party/rust/chardetng/.cargo-checksum.json
---- firefox-140.10.1/third_party/rust/chardetng/.cargo-checksum.json.gb18030-detect	2026-05-13 12:37:55.468648864 +0200
-+++ firefox-140.10.1/third_party/rust/chardetng/.cargo-checksum.json	2026-05-13 12:38:27.258240713 +0200
+diff -up firefox-153.2.0/third_party/rust/chardetng/.cargo-checksum.json.gb18030-detect firefox-153.2.0/third_party/rust/chardetng/.cargo-checksum.json
+--- firefox-153.2.0/third_party/rust/chardetng/.cargo-checksum.json.gb18030-detect	2026-08-26 19:02:54.000000000 +0200
++++ firefox-153.2.0/third_party/rust/chardetng/.cargo-checksum.json	2026-09-10 13:51:48.549278217 +0200
 @@ -1 +1 @@
--{"files":{"CONTRIBUTING.md":"0e64fb3dd5a00e3fd528de6442de3f2ca851bd718c45cca0871aaf4eedac9ee1","COPYRIGHT":"2fd0d7e90bd241b79804de129c5b70089988f82a7bbb0fe580a55b67b2968928","Cargo.toml":"0057b1837d8cb495106da7572225d483164e4b17f632ba1d4402eafe66da08b0","LICENSE-APACHE":"cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30","LICENSE-MIT":"4ad721b5b6a3d39ca3e2202f403d897c4a1d42896486dd58963a81f8e64ef61d","README.md":"a6c97d91989aee4c8afed918340ce6287652cbdd6fed833e20f76367c7953db9","src/data.rs":"be48f1486ef9fc264f6cda2e10944b7dcf8ed0a904b53227340a1384803796c7","src/lib.rs":"16c7c78a56ec917e92db97263f4adddcf3749acaf7de88d088d1f5c86c278107","src/tld.rs":"295c3c90c60c5bb6edd753b77c261eed10be2d431badda4e02168e740a0f2d7e"},"package":null}
+-{"files":{".cargo_vcs_info.json":"769413d43d5075b976f3e63dce9496e0fd5db553ebed91ae8c2c81843d85b03a","CONTRIBUTING.md":"0e64fb3dd5a00e3fd528de6442de3f2ca851bd718c45cca0871aaf4eedac9ee1","COPYRIGHT":"01a5b47e1a8a9a4d4f9d1790ee83aee8e66292ed936ad82fe9efbc808d790b92","Cargo.lock":"53a007f747c1e9b052ee384cbc1ff8695bdb670d475629c03c819b939e4d8d2c","Cargo.toml":"c9babab6216f00701ef5933ba0d74e066f0c1d3cdd1ab8123343c6b7c8153fc8","Cargo.toml.orig":"ab7f35079d171a05949b8888d160368832d55cd141355c3ee90c3c3b8233f040","LICENSE-APACHE":"cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30","LICENSE-MIT":"3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c","README.md":"15f59d31be06931f36a78d7b9155840d247d0e2ee131d2cd16d5540ccf092114","src/data.rs":"2e58404ae42facd6a0887f81dc76709efcdc7cf4159e5a214f4f2ecd717c44d0","src/lib.rs":"25dd7515e501752ace2356b4ead3cc6c74840648481dcad6ab8e496950ca394e","src/tld.rs":"bf7084a8d6aac020d5cd05ac13d675d54ce81d4a2fbba45b7dffc608afa22783"},"package":"13de944a44b5064ee5d3a5ceccc49a41bfec50f2580e66f82e87703acdb88b53"}
 \ No newline at end of file
-+{"files":{"CONTRIBUTING.md":"0e64fb3dd5a00e3fd528de6442de3f2ca851bd718c45cca0871aaf4eedac9ee1","COPYRIGHT":"2fd0d7e90bd241b79804de129c5b70089988f82a7bbb0fe580a55b67b2968928","Cargo.toml":"0057b1837d8cb495106da7572225d483164e4b17f632ba1d4402eafe66da08b0","LICENSE-APACHE":"cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30","LICENSE-MIT":"4ad721b5b6a3d39ca3e2202f403d897c4a1d42896486dd58963a81f8e64ef61d","README.md":"a6c97d91989aee4c8afed918340ce6287652cbdd6fed833e20f76367c7953db9","src/data.rs":"be48f1486ef9fc264f6cda2e10944b7dcf8ed0a904b53227340a1384803796c7","src/lib.rs":"bd8a7d88a026cda7f6fc37bcc27d08f0a124361ca9b2dd7bdf7f5e3c3540c904","src/tld.rs":"295c3c90c60c5bb6edd753b77c261eed10be2d431badda4e02168e740a0f2d7e"},"package":null}
++{"files":{".cargo_vcs_info.json":"769413d43d5075b976f3e63dce9496e0fd5db553ebed91ae8c2c81843d85b03a","CONTRIBUTING.md":"0e64fb3dd5a00e3fd528de6442de3f2ca851bd718c45cca0871aaf4eedac9ee1","COPYRIGHT":"01a5b47e1a8a9a4d4f9d1790ee83aee8e66292ed936ad82fe9efbc808d790b92","Cargo.lock":"53a007f747c1e9b052ee384cbc1ff8695bdb670d475629c03c819b939e4d8d2c","Cargo.toml":"c9babab6216f00701ef5933ba0d74e066f0c1d3cdd1ab8123343c6b7c8153fc8","Cargo.toml.orig":"ab7f35079d171a05949b8888d160368832d55cd141355c3ee90c3c3b8233f040","LICENSE-APACHE":"cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30","LICENSE-MIT":"3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c","README.md":"15f59d31be06931f36a78d7b9155840d247d0e2ee131d2cd16d5540ccf092114","src/data.rs":"2e58404ae42facd6a0887f81dc76709efcdc7cf4159e5a214f4f2ecd717c44d0","src/lib.rs":"8722fcf306b17153a5503046b5538790066e9026b331087c1268e65fdb017c43","src/tld.rs":"bf7084a8d6aac020d5cd05ac13d675d54ce81d4a2fbba45b7dffc608afa22783"},"package":"13de944a44b5064ee5d3a5ceccc49a41bfec50f2580e66f82e87703acdb88b53"}
 \ No newline at end of file
-diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect firefox-140.10.1/third_party/rust/chardetng/src/lib.rs
---- firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect	2026-04-27 18:09:07.000000000 +0200
-+++ firefox-140.10.1/third_party/rust/chardetng/src/lib.rs	2026-05-13 12:35:16.538893997 +0200
-@@ -18,6 +18,7 @@ use encoding_rs::Encoding;
+diff -up firefox-153.2.0/third_party/rust/chardetng/src/lib.rs.gb18030-detect firefox-153.2.0/third_party/rust/chardetng/src/lib.rs
+--- firefox-153.2.0/third_party/rust/chardetng/src/lib.rs.gb18030-detect	2026-08-26 19:02:55.000000000 +0200
++++ firefox-153.2.0/third_party/rust/chardetng/src/lib.rs	2026-09-10 13:49:40.724622216 +0200
+@@ -36,6 +36,7 @@ use encoding_rs::Encoding;
  use encoding_rs::BIG5;
  use encoding_rs::EUC_JP;
  use encoding_rs::EUC_KR;
@@ -17,7 +17,7 @@ diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect f
  use encoding_rs::GBK;
  use encoding_rs::ISO_2022_JP;
  use encoding_rs::ISO_8859_8;
-@@ -123,7 +124,12 @@ const GBK_SCORE_PER_LEVEL_2: i64 = CJK_S
+@@ -141,7 +142,12 @@ const GBK_SCORE_PER_LEVEL_2: i64 = CJK_S
  
  const GBK_SCORE_PER_NON_EUC: i64 = CJK_SECONDARY_BASE_SCORE / 4;
  
@@ -30,7 +30,7 @@ diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect f
  
  const GBK_SINGLE_BYTE_EXTENSION_PENALTY: i64 = GBK_PUA_PENALTY * 4;
  
-@@ -1100,7 +1106,7 @@ impl GbkCandidate {
+@@ -1118,7 +1124,7 @@ impl GbkCandidate {
                              self.prev = LatinCj::Cj;
                          }
                          _ => {
@@ -39,7 +39,7 @@ diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect f
                              self.prev = LatinCj::Other;
                          }
                      }
-@@ -1141,11 +1147,13 @@ impl GbkCandidate {
+@@ -1159,11 +1165,13 @@ impl GbkCandidate {
                      self.pending_score = None;
                  }
                  let u = dst[0];
@@ -55,7 +55,7 @@ diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect f
                      if self.prev == LatinCj::AsciiLetter {
                          score += CJK_LATIN_ADJACENCY_PENALTY;
                      }
-@@ -1177,7 +1185,7 @@ impl GbkCandidate {
+@@ -1195,7 +1203,7 @@ impl GbkCandidate {
                          }
                          // The GBK decoder has the pending ASCII concept, which is
                          // a problem with this trickery, so let's reset the state.
@@ -64,7 +64,7 @@ diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect f
                      } else if malformed_len == 1 && b == 0xFF {
                          // Mac OS Chinese Simplified single-byte extension that doesn't conflict with lead bytes
                          self.pending_score = None; // Just in case
-@@ -1185,7 +1193,7 @@ impl GbkCandidate {
+@@ -1203,7 +1211,7 @@ impl GbkCandidate {
                          self.prev = LatinCj::Other;
                          // The GBK decoder has the pending ASCII concept, which is
                          // a problem with this trickery, so let's reset the state.
@@ -73,7 +73,7 @@ diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect f
                      } else {
                          return None;
                      }
-@@ -2598,7 +2606,7 @@ impl Candidate {
+@@ -2635,7 +2643,7 @@ impl Candidate {
      fn new_gbk() -> Self {
          Candidate {
              inner: InnerCandidate::Gbk(GbkCandidate {
@@ -82,7 +82,7 @@ diff -up firefox-140.10.1/third_party/rust/chardetng/src/lib.rs.gb18030-detect f
                  prev: LatinCj::Other,
                  prev_byte: 0,
                  pending_score: None,
-@@ -3356,6 +3364,12 @@ mod tests {
+@@ -3502,6 +3510,12 @@ mod tests {
      }
  
      #[test]

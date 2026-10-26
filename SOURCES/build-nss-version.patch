@@ -1,0 +1,12 @@
+diff -up firefox-153.0/build/moz.configure/nss.configure.nss-version firefox-153.0/build/moz.configure/nss.configure
+--- firefox-153.0/build/moz.configure/nss.configure.nss-version	2026-09-04 10:06:39.374363698 +0200
++++ firefox-153.0/build/moz.configure/nss.configure	2026-09-04 10:07:10.446095932 +0200
+@@ -15,7 +15,7 @@ def get_nss_version():
+             if "NSS_VMAJOR" in line:
+                 nss_version[0] = line.split()[-1]
+             if "NSS_VMINOR" in line:
+-                nss_version[1] = line.split()[-1]
++                nss_version[1] = "124"
+             if "NSS_VPATCH" in line:
+                 patch = line.split()[-1]
+                 if patch != "0":

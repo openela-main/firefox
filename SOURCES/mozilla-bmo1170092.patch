@@ -1,8 +1,8 @@
-diff -up firefox-140.0/extensions/pref/autoconfig/src/nsReadConfig.cpp.mozilla-bmo1170092 firefox-140.0/extensions/pref/autoconfig/src/nsReadConfig.cpp
---- firefox-140.0/extensions/pref/autoconfig/src/nsReadConfig.cpp.mozilla-bmo1170092	2025-06-02 15:26:44.000000000 +0200
-+++ firefox-140.0/extensions/pref/autoconfig/src/nsReadConfig.cpp	2025-06-04 13:24:00.344728697 +0200
-@@ -263,8 +263,20 @@ nsresult nsReadConfig::openAndEvaluateJS
-     if (NS_FAILED(rv)) return rv;
+diff -up firefox-153.0/extensions/pref/autoconfig/src/nsReadConfig.cpp.mozilla-bmo1170092 firefox-153.0/extensions/pref/autoconfig/src/nsReadConfig.cpp
+--- firefox-153.0/extensions/pref/autoconfig/src/nsReadConfig.cpp.mozilla-bmo1170092	2026-07-01 15:07:37.000000000 +0200
++++ firefox-153.0/extensions/pref/autoconfig/src/nsReadConfig.cpp	2026-07-03 16:10:05.550569379 +0200
+@@ -268,8 +268,20 @@ nsresult nsReadConfig::openAndEvaluateJS
+ #endif  // defined(MOZ_WIDGET_GTK)
  
      rv = NS_NewLocalFileInputStream(getter_AddRefs(inStr), jsFile);
 -    if (NS_FAILED(rv)) return rv;
@@ -11,22 +11,22 @@ diff -up firefox-140.0/extensions/pref/autoconfig/src/nsReadConfig.cpp.mozilla-b
 +      rv = NS_GetSpecialDirectory(NS_APP_PREFS_SYSTEM_CONFIG_DIR,
 +                                  getter_AddRefs(jsFile));
 +      NS_ENSURE_SUCCESS(rv, rv);
-+
+ 
 +      rv = jsFile->AppendNative(nsLiteralCString("pref"));
 +      NS_ENSURE_SUCCESS(rv, rv);
 +      rv = jsFile->AppendNative(nsDependentCString(aFileName));
 +      NS_ENSURE_SUCCESS(rv, rv);
- 
++
 +      rv = NS_NewLocalFileInputStream(getter_AddRefs(inStr), jsFile);
 +      NS_ENSURE_SUCCESS(rv, rv);
 +    }
    } else {
      nsAutoCString location("resource://gre/defaults/autoconfig/");
      location += aFileName;
-diff -up firefox-140.0/modules/libpref/Preferences.cpp.mozilla-bmo1170092 firefox-140.0/modules/libpref/Preferences.cpp
---- firefox-140.0/modules/libpref/Preferences.cpp.mozilla-bmo1170092	2025-06-02 15:26:51.000000000 +0200
-+++ firefox-140.0/modules/libpref/Preferences.cpp	2025-06-04 13:24:00.345430064 +0200
-@@ -4914,6 +4914,9 @@ nsresult Preferences::InitInitialObjects
+diff -up firefox-153.0/modules/libpref/Preferences.cpp.mozilla-bmo1170092 firefox-153.0/modules/libpref/Preferences.cpp
+--- firefox-153.0/modules/libpref/Preferences.cpp.mozilla-bmo1170092	2026-07-01 15:07:45.000000000 +0200
++++ firefox-153.0/modules/libpref/Preferences.cpp	2026-07-03 16:07:19.701063803 +0200
+@@ -5157,6 +5157,9 @@ nsresult Preferences::InitInitialObjects
    //
    // Thus, in the omni.jar case, we always load app-specific default
    // preferences from omni.jar, whether or not `$app == $gre`.
@@ -36,18 +36,20 @@ diff -up firefox-140.0/modules/libpref/Preferences.cpp.mozilla-bmo1170092 firefo
  
    nsresult rv = NS_ERROR_FAILURE;
    UniquePtr<nsZipFind> find;
-diff -up firefox-140.0/toolkit/xre/nsXREDirProvider.cpp.mozilla-bmo1170092 firefox-140.0/toolkit/xre/nsXREDirProvider.cpp
---- firefox-140.0/toolkit/xre/nsXREDirProvider.cpp.mozilla-bmo1170092	2025-06-02 15:27:00.000000000 +0200
-+++ firefox-140.0/toolkit/xre/nsXREDirProvider.cpp	2025-06-04 15:44:09.413562326 +0200
-@@ -76,6 +76,7 @@
+diff -up firefox-153.0/toolkit/xre/nsXREDirProvider.cpp.mozilla-bmo1170092 firefox-153.0/toolkit/xre/nsXREDirProvider.cpp
+--- firefox-153.0/toolkit/xre/nsXREDirProvider.cpp.mozilla-bmo1170092	2026-07-01 15:07:58.000000000 +0200
++++ firefox-153.0/toolkit/xre/nsXREDirProvider.cpp	2026-07-03 16:10:47.334083459 +0200
+@@ -81,6 +81,9 @@
+ #  include <sys/stat.h>
+ #  include <unistd.h>
  #endif
- #ifdef XP_UNIX
- #  include <ctype.h>
++#ifdef XP_UNIX
 +#  include "nsIXULAppInfo.h"
- #endif
++#endif
  #ifdef XP_IOS
  #  include "UIKitDirProvider.h"
-@@ -462,6 +463,17 @@ nsXREDirProvider::GetFile(const char* aP
+ #endif
+@@ -518,6 +521,17 @@ nsXREDirProvider::GetFile(const char* aP
      rv = file->AppendNative(nsLiteralCString(PREF_OVERRIDE_DIRNAME));
      NS_ENSURE_SUCCESS(rv, rv);
      rv = EnsureDirectoryExists(file);
@@ -65,7 +67,7 @@ diff -up firefox-140.0/toolkit/xre/nsXREDirProvider.cpp.mozilla-bmo1170092 firef
    } else {
      // We don't know anything about this property. Fail without warning, because
      // otherwise we'll get too much warning spam due to
-@@ -518,6 +530,16 @@ nsXREDirProvider::GetFiles(const char* a
+@@ -574,6 +588,16 @@ nsXREDirProvider::GetFiles(const char* a
      }
  #endif
  
@@ -82,10 +84,10 @@ diff -up firefox-140.0/toolkit/xre/nsXREDirProvider.cpp.mozilla-bmo1170092 firef
      rv = NS_NewArrayEnumerator(aResult, directories, NS_GET_IID(nsIFile));
    } else if (!strcmp(aProperty, NS_APP_CHROME_DIR_LIST)) {
      // NS_APP_CHROME_DIR_LIST is only used to get default (native) icons
-diff -up firefox-140.0/xpcom/io/nsAppDirectoryServiceDefs.h.mozilla-bmo1170092 firefox-140.0/xpcom/io/nsAppDirectoryServiceDefs.h
---- firefox-140.0/xpcom/io/nsAppDirectoryServiceDefs.h.mozilla-bmo1170092	2025-06-02 15:27:01.000000000 +0200
-+++ firefox-140.0/xpcom/io/nsAppDirectoryServiceDefs.h	2025-06-04 13:24:00.346423861 +0200
-@@ -58,6 +58,7 @@
+diff -up firefox-153.0/xpcom/io/nsAppDirectoryServiceDefs.h.mozilla-bmo1170092 firefox-153.0/xpcom/io/nsAppDirectoryServiceDefs.h
+--- firefox-153.0/xpcom/io/nsAppDirectoryServiceDefs.h.mozilla-bmo1170092	2026-07-01 15:07:58.000000000 +0200
++++ firefox-153.0/xpcom/io/nsAppDirectoryServiceDefs.h	2026-07-03 16:07:19.702397852 +0200
+@@ -56,6 +56,7 @@
  #define NS_APP_PREFS_DEFAULTS_DIR_LIST "PrefDL"
  #define NS_APP_PREFS_OVERRIDE_DIR \
    "PrefDOverride"  // Directory for per-profile defaults
