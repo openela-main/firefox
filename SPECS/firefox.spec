@@ -195,7 +195,7 @@ end}
 
 Summary:        Mozilla Firefox Web browser
 Name:           firefox
-Version:        153.5.0
+Version:        153.6.0
 Release:        1%{?dist}
 URL:            https://www.mozilla.org/firefox/
 License:        MPLv1.1 or GPLv2+ or LGPLv2+
@@ -226,7 +226,7 @@ ExcludeArch:    aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:        firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:        firefox-langpacks-%{version}%{?pre_version}-20261009.tar.xz
+Source1:        firefox-langpacks-%{version}%{?pre_version}-20261026.tar.xz
 %endif
 Source2:        cbindgen-vendor.tar.xz
 Source3:        process-official-tarball
@@ -299,6 +299,9 @@ Patch108:       mozilla-bmo1716707-svg.patch
 Patch109:       mozilla-bmo1789216-disable-av1.patch
 Patch110:       build-libaom.patch
 Patch111:       av1-else-condition-add.patch
+Patch112:       mozilla-bmo2085342-icu-big-endian.patch
+# Expat rebase to 2.8.5, remove in 153.7
+Patch113:       expat-285.patch
 
 # ML-DSA support
 # https://phabricator.services.mozilla.com/D262395
@@ -1452,6 +1455,7 @@ cat %{SOURCE38} | sed -e "s|LIBCLANG_RT_PLACEHOLDER|`pwd`/wasi-sdk-30/build/sysr
 %endif
 %patch -P110 -p1 -b .libaom
 %patch -P111 -p1 -b .av1-else-condition-add
+%patch -P112 -p1 -b .bmo2085342-icu-big-endian
 
 %if 0%{?rhel} >= 10 && %{rhel_minor_version} >= 1
 # ML-DSA support in TLS
@@ -1480,6 +1484,7 @@ cat %{SOURCE38} | sed -e "s|LIBCLANG_RT_PLACEHOLDER|`pwd`/wasi-sdk-30/build/sysr
 %patch -P204 -p1 -b .wasm32-wasip1
 
 # ---- Security patches ----
+%patch -P113 -p1 -b .expat-285
 
 %{__rm} -f .mozconfig
 %{__cp} %{SOURCE10} .mozconfig
@@ -2267,11 +2272,22 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
+* Mon Oct 26 2026 Jan Horak <jhorak@redhat.com> - 153.6.0-1
+- Update to 153.6.0 ESR
+
 * Fri Oct  9 2026 Jan Horak <jhorak@redhat.com> - 153.5.0-1
 - Update to 153.5.0 ESR
 
 * Tue Sep  8 2026 Jan Horak <jhorak@redhat.com> - 140.15.0-1
 - Update to 140.15.0 ESR
+- Fix ML-DSA certificate validation
+  Resolves: RHEL-252227
+
+* Wed Aug 12 2026 Jan Grulich <jgrulich@redhat.com> - 140.14.0-1
+- Update to 140.14.0 ESR
+
+* Thu Jul 16 2026 Jan Horak <jhorak@redhat.com> - 140.13.0-1
+- Update to 140.13.0 ESR
 
 * Wed Jun 10 2026 Jan Horak <jhorak@redhat.com> - 140.12.0-1
 - Update to 140.12.0 ESR
