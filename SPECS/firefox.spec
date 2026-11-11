@@ -2272,7 +2272,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
-* Mon Nov 02 2026 Release Engineering <releng@openela.org> - 153.6.0
+* Wed Nov 11 2026 Release Engineering <releng@openela.org> - 153.6.0
 - Add debranding patches (Mustafa Gezen)
 - Add OpenELA default preferences (Louis Abel)
 
