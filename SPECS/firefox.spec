@@ -195,7 +195,7 @@ end}
 
 Summary:        Mozilla Firefox Web browser
 Name:           firefox
-Version:        153.6.0
+Version:        153.7.0
 Release:        1%{?dist}
 URL:            https://www.mozilla.org/firefox/
 License:        MPLv1.1 or GPLv2+ or LGPLv2+
@@ -226,7 +226,7 @@ ExcludeArch:    aarch64 s390 ppc
 # Link to original tarball: https://archive.mozilla.org/pub/firefox/releases/%%{version}%%{?pre_version}/source/firefox-%%{version}%%{?pre_version}.source.tar.xz
 Source0:        firefox-%{version}%{?pre_version}%{?buildnum}.processed-source.tar.xz
 %if %{with langpacks}
-Source1:        firefox-langpacks-%{version}%{?pre_version}-20261026.tar.xz
+Source1:        firefox-langpacks-%{version}%{?pre_version}-20261109.tar.xz
 %endif
 Source2:        cbindgen-vendor.tar.xz
 Source3:        process-official-tarball
@@ -301,7 +301,6 @@ Patch110:       build-libaom.patch
 Patch111:       av1-else-condition-add.patch
 Patch112:       mozilla-bmo2085342-icu-big-endian.patch
 # Expat rebase to 2.8.5, remove in 153.7
-Patch113:       expat-285.patch
 
 # ML-DSA support
 # https://phabricator.services.mozilla.com/D262395
@@ -1484,7 +1483,6 @@ cat %{SOURCE38} | sed -e "s|LIBCLANG_RT_PLACEHOLDER|`pwd`/wasi-sdk-30/build/sysr
 %patch -P204 -p1 -b .wasm32-wasip1
 
 # ---- Security patches ----
-%patch -P113 -p1 -b .expat-285
 
 %{__rm} -f .mozconfig
 %{__cp} %{SOURCE10} .mozconfig
@@ -2272,6 +2270,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 #---------------------------------------------------------------------
 
 %changelog
+* Mon Nov  9 2026 Jan Horak <jhorak@redhat.com> - 153.7.0-1
+- Update to 153.7.0 ESR
+
 * Mon Oct 26 2026 Jan Horak <jhorak@redhat.com> - 153.6.0-1
 - Update to 153.6.0 ESR
 
